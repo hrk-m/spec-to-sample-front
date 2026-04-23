@@ -379,4 +379,172 @@ describe("AddMemberSheet", () => {
     const selectionHeader = container.querySelector('th[aria-label="選択"]');
     expect(selectionHeader).toBeInTheDocument();
   });
+
+  describe("全選択ヘッダーチェックボックス", () => {
+    it("全未選択時にヘッダー checkbox が unchecked かつ indeterminate=false", () => {
+      vi.mocked(useNonMemberList).mockReturnValue({
+        ...defaultHookReturn,
+        users: [
+          { id: 1, first_name: "太郎", last_name: "山田" },
+          { id: 2, first_name: "花子", last_name: "鈴木" },
+        ],
+        total: 2,
+      });
+
+      const { container } = render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+
+      const headerCheckbox = container.querySelector(
+        'input[type="checkbox"][data-testid="header-checkbox"]',
+      ) as HTMLInputElement;
+      expect(headerCheckbox).toBeInTheDocument();
+      expect(headerCheckbox.checked).toBe(false);
+      expect(headerCheckbox.indeterminate).toBe(false);
+    });
+
+    it("全非メンバー個別選択後にヘッダー checkbox が checked かつ indeterminate=false", async () => {
+      const user = userEvent.setup();
+      vi.mocked(useNonMemberList).mockReturnValue({
+        ...defaultHookReturn,
+        users: [
+          { id: 1, first_name: "太郎", last_name: "山田" },
+          { id: 2, first_name: "花子", last_name: "鈴木" },
+        ],
+        total: 2,
+      });
+
+      const { container } = render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+
+      await user.click(screen.getByText("山田 太郎"));
+      await user.click(screen.getByText("鈴木 花子"));
+
+      const headerCheckbox = container.querySelector(
+        'input[type="checkbox"][data-testid="header-checkbox"]',
+      ) as HTMLInputElement;
+      expect(headerCheckbox.checked).toBe(true);
+      expect(headerCheckbox.indeterminate).toBe(false);
+    });
+
+    it("一部選択時にヘッダー checkbox が indeterminate=true", async () => {
+      const user = userEvent.setup();
+      vi.mocked(useNonMemberList).mockReturnValue({
+        ...defaultHookReturn,
+        users: [
+          { id: 1, first_name: "太郎", last_name: "山田" },
+          { id: 2, first_name: "花子", last_name: "鈴木" },
+        ],
+        total: 2,
+      });
+
+      const { container } = render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+
+      await user.click(screen.getByText("山田 太郎"));
+
+      const headerCheckbox = container.querySelector(
+        'input[type="checkbox"][data-testid="header-checkbox"]',
+      ) as HTMLInputElement;
+      expect(headerCheckbox.indeterminate).toBe(true);
+    });
+
+    it("全未選択→ヘッダークリックで全非メンバーが選択される", async () => {
+      const user = userEvent.setup();
+      vi.mocked(useNonMemberList).mockReturnValue({
+        ...defaultHookReturn,
+        users: [
+          { id: 1, first_name: "太郎", last_name: "山田" },
+          { id: 2, first_name: "花子", last_name: "鈴木" },
+        ],
+        total: 2,
+      });
+
+      const { container } = render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+
+      const headerCheckbox = container.querySelector(
+        'input[type="checkbox"][data-testid="header-checkbox"]',
+      ) as HTMLInputElement;
+      await user.click(headerCheckbox);
+
+      // Verify header is now checked
+      expect(headerCheckbox.checked).toBe(true);
+      // Verify all Radix checkboxes have aria-checked="true"
+      const radixCheckboxes = container.querySelectorAll('[role="checkbox"]');
+      radixCheckboxes.forEach((cb) => {
+        expect(cb.getAttribute("aria-checked")).toBe("true");
+      });
+    });
+
+    it("全選択→ヘッダークリックで全非メンバーが解除される", async () => {
+      const user = userEvent.setup();
+      vi.mocked(useNonMemberList).mockReturnValue({
+        ...defaultHookReturn,
+        users: [
+          { id: 1, first_name: "太郎", last_name: "山田" },
+          { id: 2, first_name: "花子", last_name: "鈴木" },
+        ],
+        total: 2,
+      });
+
+      const { container } = render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+
+      const headerCheckbox = container.querySelector(
+        'input[type="checkbox"][data-testid="header-checkbox"]',
+      ) as HTMLInputElement;
+
+      // First click: select all
+      await user.click(headerCheckbox);
+      // Second click: deselect all
+      await user.click(headerCheckbox);
+
+      // Verify header checkbox itself is unchecked
+      expect(headerCheckbox.checked).toBe(false);
+
+      const radixCheckboxes = container.querySelectorAll('[role="checkbox"]');
+      radixCheckboxes.forEach((cb) => {
+        expect(cb.getAttribute("aria-checked")).toBe("false");
+      });
+    });
+
+    it("indeterminate→ヘッダークリックで全非メンバーが選択される", async () => {
+      const user = userEvent.setup();
+      vi.mocked(useNonMemberList).mockReturnValue({
+        ...defaultHookReturn,
+        users: [
+          { id: 1, first_name: "太郎", last_name: "山田" },
+          { id: 2, first_name: "花子", last_name: "鈴木" },
+        ],
+        total: 2,
+      });
+
+      const { container } = render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+
+      // Click one item to get indeterminate state
+      await user.click(screen.getByText("山田 太郎"));
+
+      const headerCheckbox = container.querySelector(
+        'input[type="checkbox"][data-testid="header-checkbox"]',
+      ) as HTMLInputElement;
+      expect(headerCheckbox.indeterminate).toBe(true);
+
+      // Click header to select all
+      await user.click(headerCheckbox);
+
+      const radixCheckboxes = container.querySelectorAll('[role="checkbox"]');
+      radixCheckboxes.forEach((cb) => {
+        expect(cb.getAttribute("aria-checked")).toBe("true");
+      });
+    });
+
+    it("非メンバー 0 件時にヘッダー checkbox が disabled=true", () => {
+      vi.mocked(useNonMemberList).mockReturnValue({
+        ...defaultHookReturn,
+        users: [],
+        total: 0,
+        isLoading: false,
+      });
+
+      render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+
+      const headerCheckbox = screen.getByTestId("header-checkbox") as HTMLInputElement;
+      expect(headerCheckbox).toBeDisabled();
+    });
+  });
 });

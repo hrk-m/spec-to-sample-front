@@ -2,18 +2,15 @@ import { createBrowserRouter, Outlet } from "react-router";
 
 import { ServiceUnavailablePage } from "@/pages/service-unavailable";
 import { UserDetailPage } from "@/pages/user-detail";
-import { AuthProvider } from "@/shared/auth";
 import { SheetStackProvider } from "@/shared/lib/sheet-stack";
 import { GroupNavigationLayout } from "./routes/GroupNavigationLayout";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 
 function Layout() {
   return (
-    <AuthProvider>
-      <SheetStackProvider>
-        <Outlet />
-      </SheetStackProvider>
-    </AuthProvider>
+    <SheetStackProvider>
+      <Outlet />
+    </SheetStackProvider>
   );
 }
 

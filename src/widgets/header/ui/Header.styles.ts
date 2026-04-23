@@ -5,8 +5,7 @@ const colors = {
   border: appColors.separator,
   shadow: "0 16px 32px rgba(15, 23, 42, 0.06)",
   title: appColors.textPrimary,
-  avatarBackground: appColors.accentSoft,
-  avatarText: appColors.accent,
+  avatarText: appColors.textSecondary,
 } as const;
 
 export const styles = {
@@ -60,20 +59,34 @@ export const styles = {
     alignItems: "center",
     justifyContent: "center",
   },
-  accountAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 999,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: colors.avatarBackground,
+  accountButton: {
     color: colors.avatarText,
-    boxShadow: "inset 0 0 0 1px rgba(0, 122, 255, 0.08)",
   },
-  accountInitials: {
-    fontSize: 12,
-    fontWeight: 700,
-    letterSpacing: -0.1,
+  accountIcon: {
+    width: 24,
+    height: 24,
+    display: "block",
+  },
+  dropdownContent: {
+    minWidth: 220,
+  },
+  dropdownItem: {
+    padding: "8px 12px",
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 2,
+  },
+  dropdownUuid: {
+    fontSize: 11,
+    color: colors.title,
+    letterSpacing: 0,
+    wordBreak: "break-all" as const,
+    margin: 0,
+  },
+  dropdownName: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: colors.title,
+    margin: 0,
   },
 } as const;

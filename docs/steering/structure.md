@@ -30,14 +30,15 @@ src/
 - `index.tsx` — React DOM のマウント（`StrictMode` + `createRoot` + `render`）。Radix UI
   `Theme`（`appearance="light"`, `accentColor="gray"`, `grayColor="slate"`,
   `radius="large"`）でアプリ全体をラップ。HMR 対応（`import.meta.hot` による root の再利用）
-- `App.tsx` — ルートコンポーネント。App Shell パターン（`Header` + `Sidebar` +
-  `RouterProvider`）で構成。Sidebar 開閉時に
+- `App.tsx` — ルートコンポーネント。`AuthProvider` で全体をラップし、その内側に App Shell パターン
+  （`Header` + `Sidebar` + `RouterProvider`）を配置。`AuthProvider` を `RouterProvider` より外側に
+  配置することで、`Header` ウィジェットが `useAuth()` でユーザー情報を参照できる。Sidebar 開閉時に
   `RemoveScrollBar`（`react-remove-scroll-bar`）でスクロールバーを非表示化
 - `router.tsx` — `createBrowserRouter` によるルート定義。最上位の `Layout` コンポーネントが
-  `AuthProvider` と `SheetStackProvider` でアプリ全体をラップ。`/service-unavailable`
-  は認証ガード外に配置。認証が必要なルートは `ProtectedRoute` でラップされ、その内側で
-  `GroupNavigationLayout` が `/`・`/groups`・`/groups/:id`・`/users` のルーティングを制御し、
-  `/users/:id` は `UserDetailPage` を直接レンダリングする。各ルートの `element`
+  `SheetStackProvider` でアプリ全体をラップ（`AuthProvider` は `App.tsx` 側に移動済み）。
+  `/service-unavailable` は認証ガード外に配置。認証が必要なルートは `ProtectedRoute` でラップされ、
+  その内側で `GroupNavigationLayout` が `/`・`/groups`・`/groups/:id`・`/users` のルーティングを
+  制御し、`/users/:id` は `UserDetailPage` を直接レンダリングする。各ルートの `element`
   は空フラグメント（実際の描画は Layout コンポーネントが担う）
 - `routes/ProtectedRoute.tsx` — 認証ガードコンポーネント。`GET /api/v1/me`
   でセッション確認し、認証済みなら子をレンダリング。未認証・API 障害時は `location.state.reason`
@@ -88,7 +89,10 @@ FSD の entities レイヤー。現時点では使用していない（ディレ
 FSD の widgets レイヤー。ページ横断で使われる独立した UI ブロックを配置する。
 
 - `header/` — アプリヘッダー（ハンバーガーメニューボタン付き、`z-index: 150`
-  で Sheet オーバーレイより上に固定）。`ui/Header.tsx`、`ui/Header.styles.ts`、テスト
+  で Sheet オーバーレイより上に固定）。`ui/Header.tsx`、`ui/Header.styles.ts`、テスト。
+  `useAuth()` でログインユーザー情報を取得し、右端の `FaCircleUser` アイコンボタン（`aria-label="Account"`）
+  を押すと Radix UI `DropdownMenu` が開いてユーザーの UUID・氏名を表示する。
+  レイアウトは `gridTemplateColumns: "40px 1fr 40px"` の 3 カラム構成（leading / title / trailing）
 - `sidebar/`
   — サイドバーナビゲーション（オーバーレイ付きドロワー）。`ui/Sidebar.tsx`、`ui/Sidebar.styles.ts`、テスト。Props:
   `isOpen`・`onClose`（必須）、`onNavigate`（任意）。"Groups" ボタンをクリックすると `onClose()` と

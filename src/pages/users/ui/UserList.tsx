@@ -1,5 +1,6 @@
 import { Box, Flex, Heading, Skeleton, Spinner, Text, TextField } from "@radix-ui/themes";
 import { FaMagnifyingGlass } from "react-icons/fa6";
+import { useNavigate } from "react-router";
 
 import type { User } from "@/pages/users/model/user";
 import { useUserList } from "@/pages/users/model/user-list";
@@ -7,9 +8,20 @@ import { styles } from "./UserList.styles";
 
 const SKELETON_ROWS = 3;
 
-function UserTableRow({ user, isLast }: { user: User; isLast: boolean }) {
+function UserTableRow({
+  user,
+  isLast,
+  onClick,
+}: {
+  user: User;
+  isLast: boolean;
+  onClick: () => void;
+}) {
   return (
-    <tr style={isLast ? styles.tableRowLast : styles.tableRow}>
+    <tr
+      style={{ ...(isLast ? styles.tableRowLast : styles.tableRow), cursor: "pointer" }}
+      onClick={onClick}
+    >
       <td style={styles.tableCellId}>{user.id}</td>
       <td style={styles.tableCellUuid}>{user.uuid}</td>
       <td style={styles.tableCellName}>
@@ -36,6 +48,7 @@ function SkeletonUserRow() {
 }
 
 export function UserList() {
+  const navigate = useNavigate();
   const {
     users,
     searchQuery,
@@ -130,7 +143,12 @@ export function UserList() {
               </thead>
               <tbody>
                 {users.map((user, index) => (
-                  <UserTableRow key={user.id} user={user} isLast={index === users.length - 1} />
+                  <UserTableRow
+                    key={user.id}
+                    user={user}
+                    isLast={index === users.length - 1}
+                    onClick={() => navigate(`/users/${String(user.id)}`)}
+                  />
                 ))}
               </tbody>
             </table>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AlertDialog,
   Box,
@@ -43,6 +43,7 @@ function MemberRow({
               checked={isSelected}
               onCheckedChange={() => onToggle(member.id)}
               aria-label={`Select ${member.last_name} ${member.first_name}`}
+              data-testid="member-checkbox"
             />
           </Flex>
         </td>
@@ -123,6 +124,24 @@ export function MemberList({ groupId, onMemberClick, onRefetch }: MemberListProp
 
   const isInitialLoading = isLoading && members.length === 0;
   const showCheckbox = onRefetch !== undefined;
+
+  const headerCheckboxRef = useRef<HTMLInputElement>(null);
+  const isAllSelected = members.length > 0 && selectedIds.size === members.length;
+  const isSomeSelected = selectedIds.size > 0 && selectedIds.size < members.length;
+
+  useEffect(() => {
+    if (headerCheckboxRef.current) {
+      headerCheckboxRef.current.indeterminate = isSomeSelected;
+    }
+  }, [isSomeSelected, isAllSelected]);
+
+  function handleSelectAll() {
+    if (isAllSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(members.map((m) => m.id)));
+    }
+  }
 
   function handleToggle(id: number) {
     setSelectedIds((prev) => {
@@ -205,7 +224,22 @@ export function MemberList({ groupId, onMemberClick, onRefetch }: MemberListProp
         <table style={styles.tableRoot}>
           <thead style={styles.tableHeader}>
             <tr>
-              {showCheckbox && <th style={styles.tableHeaderCellCheckbox} aria-label="選択" />}
+              {showCheckbox && (
+                <th style={styles.tableHeaderCellCheckbox} aria-label="選択">
+                  <Flex align="center">
+                    <input
+                      ref={headerCheckboxRef}
+                      type="checkbox"
+                      data-testid="header-checkbox"
+                      checked={isAllSelected}
+                      disabled={members.length === 0}
+                      onChange={handleSelectAll}
+                      aria-label="全選択"
+                      style={styles.headerCheckboxInput}
+                    />
+                  </Flex>
+                </th>
+              )}
               <th style={styles.tableHeaderCell}>id</th>
               <th style={styles.tableHeaderCell}>姓名</th>
             </tr>

@@ -66,12 +66,12 @@ import { apiFetch } from "../../shared/api/client";
 
 ### 認証パターン
 
-`shared/auth` が `AuthContext` を提供し、`AuthProvider` でアプリ全体をラップする（`App.tsx` の
-最上位。`Header` も `useAuth()` を呼び出せるよう、`RouterProvider` より外側に配置されている）。
+`shared/auth` が `AuthContext` を提供し、`AuthProvider` でアプリ全体をラップする（`App.tsx`
+の最上位。`Header` も `useAuth()` を呼び出せるよう、`RouterProvider` より外側に配置されている）。
 
-- `useAuth()` — `{ user, setUser }` を返す。`AuthProvider` 外で呼び出すとエラーをスロー。
-  `Header` ウィジェットも `useAuth()` を呼び出してログインユーザーの UUID・氏名を取得し、
-  `DropdownMenu` で表示する
+- `useAuth()` — `{ user, setUser }` を返す。`AuthProvider` 外で呼び出すとエラーをスロー。 `Header`
+  ウィジェットも `useAuth()` を呼び出してログインユーザーの UUID・氏名を取得し、 `DropdownMenu`
+  で表示する
 - `ProtectedRoute` — マウント時に `GET /api/v1/me` を呼び出してセッション確認。成功時は `setUser`
   でユーザー情報をコンテキストに保存して子をレンダリング。401 は `reason="unauthenticated"` で
   `/service-unavailable` へリダイレクト、その他エラーは `reason="api_unavailable"` でリダイレクト

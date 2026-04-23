@@ -45,8 +45,9 @@ inclusion: always
 - App Shell パターン（Header + Sidebar によるナビゲーション）。サイドバー開閉時は
   `react-remove-scroll-bar`
   でスクロールバーを非表示にし、ヘッダーの padding-right で幅のズレを補正。Sidebar の "Groups" ボタンは
-  `/`、"Users" ボタンは `/users` へ遷移する（`onNavigate(path)` prop 経由）。Header 右端の
-  アカウントボタン（`FaCircleUser` アイコン）は `DropdownMenu` でログインユーザーの UUID・氏名を表示する
+  `/`、"Users" ボタンは `/users` へ遷移する（`onNavigate(path)`
+  prop 経由）。Header 右端のアカウントボタン（`FaCircleUser` アイコン）は `DropdownMenu`
+  でログインユーザーの UUID・氏名を表示する
 - 認証ガード（`ProtectedRoute`）: `GET /api/v1/me` を呼び出してセッション確認。401 は
   `reason="unauthenticated"` で `/service-unavailable` へリダイレクト、その他のエラーは
   `reason="api_unavailable"` でリダイレクト。認証済みユーザー情報（`id`, `uuid`, `firstName`,

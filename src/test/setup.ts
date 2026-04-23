@@ -1,5 +1,23 @@
 import "@testing-library/jest-dom";
 
+// ResizeObserver mock for jsdom environment
+// jsdom does not implement ResizeObserver natively
+class MockResizeObserver implements ResizeObserver {
+  observe(_target: Element): void {
+    // no-op in tests
+  }
+
+  unobserve(_target: Element): void {
+    // no-op
+  }
+
+  disconnect(): void {
+    // no-op
+  }
+}
+
+global.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
+
 // IntersectionObserver mock for jsdom environment
 // jsdom does not implement IntersectionObserver natively
 class MockIntersectionObserver implements IntersectionObserver {

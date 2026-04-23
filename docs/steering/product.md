@@ -34,8 +34,10 @@ inclusion: always
 - メンバー削除（`DELETE /api/v1/groups/:id/members`
   エンドポイント）。メンバー一覧のチェックボックスで複数選択し、「削除」ボタン（`onRefetch`
   prop が渡された場合のみ表示）から Radix UI `AlertDialog`
-  による確認ダイアログを経て一括削除する。削除成功時は `clearMemberListCache()` → `onRefetch()`
-  の順に呼び出してメンバー一覧を更新する。エラー時は確認ダイアログ内にエラーメッセージを表示する
+  による確認ダイアログを経て一括削除する。ヘッダー行の全選択チェックボックス（ネイティブ `<input
+  type="checkbox">`）で全件選択・全件解除が可能で、一部選択時は `indeterminate`
+  状態を `useRef` + `useEffect` で表現する。削除成功時は `clearMemberListCache()` →
+  `onRefetch()` の順に呼び出してメンバー一覧を更新する。エラー時は確認ダイアログ内にエラーメッセージを表示する
 - ユーザー一覧表示（検索・無限スクロール付き、`GET /api/v1/users`
   エンドポイント）。クライアントキャッシュ戦略（100 件単位取得 → クライアント側でキャッシュ）と IntersectionObserver による自動追加取得を備える。検索入力は 300ms デバウンスし、ユーザー名の部分一致検索に対応する。テーブル行をクリックすると
   `/users/:id` へ遷移する

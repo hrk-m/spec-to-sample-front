@@ -1,6 +1,7 @@
 import { createBrowserRouter, Outlet } from "react-router";
 
 import { ServiceUnavailablePage } from "@/pages/service-unavailable";
+import { UserDetailPage } from "@/pages/user-detail";
 import { AuthProvider } from "@/shared/auth";
 import { SheetStackProvider } from "@/shared/lib/sheet-stack";
 import { GroupNavigationLayout } from "./routes/GroupNavigationLayout";
@@ -37,6 +38,7 @@ export const router = createBrowserRouter([
               { path: "users", element: <></> },
             ],
           },
+          { path: "users/:id", element: <UserDetailPage /> },
         ],
       },
     ],

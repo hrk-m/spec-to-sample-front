@@ -35,7 +35,8 @@ react-router v7 を使用。`src/app/router.tsx` で `createBrowserRouter`
 をラップし、Sheet スタックのコンテキストをアプリ全体に提供する。 `GroupNavigationLayout` が
 `/`・`/groups`・`/groups/:id`・`/users` のルーティングを制御し、`/users` は
 `UsersPage`、`/groups/:id` は `location.state.presentation === "sheet"`
-の場合はシート表示、それ以外はフルページ遷移を行う。
+の場合はシート表示、それ以外はフルページ遷移を行う。`/users/:id` は `ProtectedRoute` 直下に
+`UserDetailPage` を直接レンダリングする（`GroupNavigationLayout` の外）。
 
 ### パスエイリアス
 

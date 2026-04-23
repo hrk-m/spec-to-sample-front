@@ -50,13 +50,11 @@ export const styles = {
     textTransform: "uppercase" as const,
   },
   tableHeaderCellCheckbox: {
-    padding: "12px 16px",
-    fontSize: 12,
-    fontWeight: 600,
-    color: colors.textTertiary,
-    textAlign: "left" as const,
+    padding: "13px 16px",
     borderBottom: `1px solid ${colors.separator}`,
+    verticalAlign: "middle" as const,
     width: 48,
+    boxSizing: "border-box" as const,
   },
   tableRow: {
     borderBottom: `1px solid ${colors.separator}`,
@@ -82,6 +80,7 @@ export const styles = {
     padding: "13px 16px",
     verticalAlign: "middle" as const,
     width: 48,
+    boxSizing: "border-box" as const,
   },
   errorText: {
     margin: 0,
@@ -111,5 +110,14 @@ export const styles = {
     borderRadius: 999,
     height: 14,
     width: "60%",
+  },
+  headerCheckboxInput: {
+    display: "block" as const,
+    width: 16,
+    height: 16,
+    margin: 0,
+    cursor: "pointer",
+    accentColor: colors.textPrimary,
+    flexShrink: 0,
   },
 } as const;

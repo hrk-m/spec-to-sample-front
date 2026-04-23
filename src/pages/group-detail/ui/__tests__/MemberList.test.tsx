@@ -361,6 +361,151 @@ describe("MemberList", () => {
   });
 });
 
+describe("MemberList - 全選択ヘッダーチェックボックス", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    clearMemberListCache();
+    MockIntersectionObserver.reset();
+  });
+
+  it("全未選択時: ヘッダー checkbox が unchecked", async () => {
+    vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
+
+    render(<MemberList groupId={1} onRefetch={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
+    });
+
+    const headerCheckbox = screen.getByTestId("header-checkbox") as HTMLInputElement;
+    expect(headerCheckbox.checked).toBe(false);
+    expect(headerCheckbox.indeterminate).toBe(false);
+  });
+
+  it("全選択時: ヘッダー checkbox が checked", async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
+
+    render(<MemberList groupId={1} onRefetch={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
+    });
+
+    // 全メンバーを個別チェック（Radix UI Checkbox は aria-checked で状態確認）
+    const memberCheckboxes = screen.getAllByTestId("member-checkbox");
+    await Promise.all(memberCheckboxes.map((checkbox) => user.click(checkbox)));
+
+    const headerCheckbox = screen.getByTestId("header-checkbox") as HTMLInputElement;
+    expect(headerCheckbox.checked).toBe(true);
+    expect(headerCheckbox.indeterminate).toBe(false);
+  });
+
+  it("一部選択時: ヘッダー checkbox が indeterminate=true", async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
+
+    render(<MemberList groupId={1} onRefetch={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
+    });
+
+    // 最初の 1 件だけチェック
+    const memberCheckboxes = screen.getAllByTestId("member-checkbox");
+    await user.click(memberCheckboxes[0] as Element);
+
+    const headerCheckbox = screen.getByTestId("header-checkbox") as HTMLInputElement;
+    expect(headerCheckbox.indeterminate).toBe(true);
+  });
+
+  it("全未選択→ヘッダークリック: 全行 checked", async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
+
+    render(<MemberList groupId={1} onRefetch={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
+    });
+
+    const headerCheckbox = screen.getByTestId("header-checkbox");
+    await user.click(headerCheckbox);
+
+    // Radix UI Checkbox の checked 状態は aria-checked 属性で確認
+    const memberCheckboxes = screen.getAllByTestId("member-checkbox");
+    for (const checkbox of memberCheckboxes) {
+      expect(checkbox).toHaveAttribute("aria-checked", "true");
+    }
+  });
+
+  it("全選択→ヘッダークリック: 全行 unchecked", async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
+
+    render(<MemberList groupId={1} onRefetch={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
+    });
+
+    const headerCheckbox = screen.getByTestId("header-checkbox");
+
+    // まず全選択
+    await user.click(headerCheckbox);
+
+    const memberCheckboxes = screen.getAllByTestId("member-checkbox");
+    for (const checkbox of memberCheckboxes) {
+      expect(checkbox).toHaveAttribute("aria-checked", "true");
+    }
+
+    // ヘッダーをもう一度クリックで全解除
+    await user.click(headerCheckbox);
+
+    for (const checkbox of memberCheckboxes) {
+      expect(checkbox).toHaveAttribute("aria-checked", "false");
+    }
+  });
+
+  it("indeterminate→ヘッダークリック: 全行 checked", async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
+
+    render(<MemberList groupId={1} onRefetch={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
+    });
+
+    // 最初の 1 件だけチェックして indeterminate にする
+    const memberCheckboxes = screen.getAllByTestId("member-checkbox");
+    await user.click(memberCheckboxes[0] as Element);
+
+    const headerCheckbox = screen.getByTestId("header-checkbox") as HTMLInputElement;
+    expect(headerCheckbox.indeterminate).toBe(true);
+
+    // ヘッダークリックで全選択
+    await user.click(headerCheckbox);
+
+    for (const checkbox of memberCheckboxes) {
+      expect(checkbox).toHaveAttribute("aria-checked", "true");
+    }
+  });
+
+  it("メンバー 0 件: ヘッダー checkbox が disabled=true", async () => {
+    vi.mocked(fetchGroupMembers).mockResolvedValueOnce({ members: [], total: 0 });
+
+    render(<MemberList groupId={1} onRefetch={vi.fn()} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("No members found.")).toBeInTheDocument();
+    });
+
+    const headerCheckbox = screen.getByTestId("header-checkbox") as HTMLInputElement;
+    expect(headerCheckbox.disabled).toBe(true);
+  });
+});
+
 describe("MemberList - メンバー削除", () => {
   let clearCacheSpy: ReturnType<typeof vi.spyOn>;
 
@@ -388,8 +533,8 @@ describe("MemberList - メンバー削除", () => {
     const deleteButton = screen.getByRole("button", { name: "削除" });
     expect(deleteButton).toBeDisabled();
 
-    const firstCheckbox = screen.getAllByRole("checkbox")[0] as Element;
-    await user.click(firstCheckbox);
+    const firstMemberCheckbox = screen.getAllByTestId("member-checkbox")[0] as Element;
+    await user.click(firstMemberCheckbox);
 
     expect(deleteButton).not.toBeDisabled();
   });
@@ -404,8 +549,8 @@ describe("MemberList - メンバー削除", () => {
       expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
     });
 
-    const firstCheckbox = screen.getAllByRole("checkbox")[0] as Element;
-    await user.click(firstCheckbox);
+    const firstMemberCheckbox = screen.getAllByTestId("member-checkbox")[0] as Element;
+    await user.click(firstMemberCheckbox);
 
     const deleteButton = screen.getByRole("button", { name: "削除" });
     await user.click(deleteButton);
@@ -427,8 +572,8 @@ describe("MemberList - メンバー削除", () => {
       expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
     });
 
-    const firstCheckbox = screen.getAllByRole("checkbox")[0] as Element;
-    await user.click(firstCheckbox);
+    const firstMemberCheckbox = screen.getAllByTestId("member-checkbox")[0] as Element;
+    await user.click(firstMemberCheckbox);
 
     const deleteButton = screen.getByRole("button", { name: "削除" });
     await user.click(deleteButton);
@@ -457,8 +602,8 @@ describe("MemberList - メンバー削除", () => {
       expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
     });
 
-    const firstCheckbox = screen.getAllByRole("checkbox")[0] as Element;
-    await user.click(firstCheckbox);
+    const firstMemberCheckbox = screen.getAllByTestId("member-checkbox")[0] as Element;
+    await user.click(firstMemberCheckbox);
 
     const deleteButton = screen.getByRole("button", { name: "削除" });
     await user.click(deleteButton);
@@ -491,8 +636,8 @@ describe("MemberList - メンバー削除", () => {
       expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
     });
 
-    const firstCheckbox = screen.getAllByRole("checkbox")[0] as Element;
-    await user.click(firstCheckbox);
+    const firstMemberCheckbox = screen.getAllByTestId("member-checkbox")[0] as Element;
+    await user.click(firstMemberCheckbox);
 
     const deleteButton = screen.getByRole("button", { name: "削除" });
     await user.click(deleteButton);

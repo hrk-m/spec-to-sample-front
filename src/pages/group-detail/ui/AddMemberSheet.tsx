@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, Button, Checkbox, Flex, Skeleton, Spinner, Text, TextField } from "@radix-ui/themes";
 import { FaMagnifyingGlass } from "react-icons/fa6";
 
@@ -31,6 +31,16 @@ const loadingTextStyle = {
   padding: "28px 24px",
 } as const;
 
+const headerCheckboxInputStyle = {
+  display: "block" as const,
+  width: 16,
+  height: 16,
+  margin: 0,
+  cursor: "pointer",
+  accentColor: "#1c1c1e",
+  flexShrink: 0,
+} as const;
+
 type AddMemberSheetProps = {
   groupId: number;
   onClose: () => void;
@@ -56,6 +66,24 @@ export function AddMemberSheet({ groupId, onClose }: AddMemberSheetProps) {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const headerCheckboxRef = useRef<HTMLInputElement>(null);
+  const isAllSelected = users.length > 0 && selectedIds.size === users.length;
+  const isSomeSelected = selectedIds.size > 0 && selectedIds.size < users.length;
+
+  useEffect(() => {
+    if (headerCheckboxRef.current) {
+      headerCheckboxRef.current.indeterminate = isSomeSelected;
+    }
+  }, [isSomeSelected, isAllSelected]);
+
+  const handleSelectAll = useCallback(() => {
+    if (isAllSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(users.map((u) => u.id)));
+    }
+  }, [isAllSelected, users]);
 
   const handleToggle = useCallback((userId: number) => {
     setSelectedIds((prev) => {
@@ -164,41 +192,56 @@ export function AddMemberSheet({ groupId, onClose }: AddMemberSheetProps) {
         </>
       )}
 
-      {!isLoading && !fetchError && users.length === 0 && (
-        <Text as="p" style={styles.emptyText}>
-          追加できるユーザーがいません。
-        </Text>
-      )}
-
-      {users.length > 0 && (
+      {!fetchError && (
         <table style={styles.tableRoot}>
           <thead style={styles.tableHeader}>
             <tr>
-              <th aria-label="選択" style={styles.tableHeaderCellCheckbox} />
+              <th aria-label="選択" style={styles.tableHeaderCellCheckbox}>
+                <Flex align="center">
+                  <input
+                    ref={headerCheckboxRef}
+                    type="checkbox"
+                    data-testid="header-checkbox"
+                    checked={isAllSelected}
+                    disabled={users.length === 0}
+                    onChange={handleSelectAll}
+                    aria-label="全選択"
+                    style={headerCheckboxInputStyle}
+                  />
+                </Flex>
+              </th>
               <th style={styles.tableHeaderCell}>姓名</th>
             </tr>
           </thead>
           <tbody>
-            {users.map((user, index) => (
-              <tr
-                key={user.id}
-                style={index < users.length - 1 ? styles.tableRow : styles.tableRowLast}
-                onClick={() => handleToggle(user.id)}
-              >
-                <td style={styles.tableCellCheckbox}>
-                  <Flex align="center">
-                    <Checkbox
-                      checked={selectedIds.has(user.id)}
-                      onClick={(e) => e.stopPropagation()}
-                      onCheckedChange={() => handleToggle(user.id)}
-                    />
-                  </Flex>
-                </td>
-                <td style={styles.tableCellName}>
-                  {user.last_name} {user.first_name}
+            {!isLoading && users.length === 0 ? (
+              <tr>
+                <td colSpan={2} style={styles.emptyText}>
+                  追加できるユーザーがいません。
                 </td>
               </tr>
-            ))}
+            ) : (
+              users.map((user, index) => (
+                <tr
+                  key={user.id}
+                  style={index < users.length - 1 ? styles.tableRow : styles.tableRowLast}
+                  onClick={() => handleToggle(user.id)}
+                >
+                  <td style={styles.tableCellCheckbox}>
+                    <Flex align="center">
+                      <Checkbox
+                        checked={selectedIds.has(user.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        onCheckedChange={() => handleToggle(user.id)}
+                      />
+                    </Flex>
+                  </td>
+                  <td style={styles.tableCellName}>
+                    {user.last_name} {user.first_name}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       )}

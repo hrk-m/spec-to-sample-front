@@ -37,7 +37,8 @@ inclusion: always
   による確認ダイアログを経て一括削除する。削除成功時は `clearMemberListCache()` → `onRefetch()`
   の順に呼び出してメンバー一覧を更新する。エラー時は確認ダイアログ内にエラーメッセージを表示する
 - ユーザー一覧表示（検索・無限スクロール付き、`GET /api/v1/users`
-  エンドポイント）。クライアントキャッシュ戦略（100 件単位取得 → クライアント側でキャッシュ）と IntersectionObserver による自動追加取得を備える。検索入力は 300ms デバウンスし、ユーザー名の部分一致検索に対応する
+  エンドポイント）。クライアントキャッシュ戦略（100 件単位取得 → クライアント側でキャッシュ）と IntersectionObserver による自動追加取得を備える。検索入力は 300ms デバウンスし、ユーザー名の部分一致検索に対応する。テーブル行をクリックすると `/users/:id` へ遷移する
+- ユーザー詳細表示（`GET /api/v1/users/:id` エンドポイント）。ID / UUID / 姓名を情報カードに表示する。404 時は「ユーザーが見つかりません」、その他エラーはエラーカードを表示。ローディング中はスケルトン UI を表示する。「戻る」ボタンで `/users` へ遷移
 - App Shell パターン（Header + Sidebar によるナビゲーション）。サイドバー開閉時は
   `react-remove-scroll-bar`
   でスクロールバーを非表示にし、ヘッダーの padding-right で幅のズレを補正。Sidebar の "Groups" ボタンは
@@ -49,7 +50,7 @@ inclusion: always
 - サービス利用不可画面（`ServiceUnavailablePage`）: `/service-unavailable` ルート。マウント時に
   `GET /api/v1/me` を再試行し、成功すれば `/` へリダイレクト。失敗時はメンテナンス中メッセージを表示
 - react-router v7 によるクライアントサイドルーティング（`/`, `/groups`, `/groups/:id`, `/users`,
-  `/service-unavailable`）
+  `/users/:id`, `/service-unavailable`）
 - サーバーサイド API プロキシ（Bun サーバーが `/api/*` リクエストをバックエンドに中継）
 - Feature-Sliced Design に沿ったスケーラブルなフロントエンド構造のデモ
 

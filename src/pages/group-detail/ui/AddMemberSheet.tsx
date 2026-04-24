@@ -171,6 +171,7 @@ export function AddMemberSheet({ groupId, onClose }: AddMemberSheetProps) {
             <thead style={styles.tableHeader}>
               <tr>
                 <th aria-label="選択" style={styles.tableHeaderCellCheckbox} />
+                <th style={styles.tableHeaderCellUuid}>uuid</th>
                 <th style={styles.tableHeaderCell}>姓名</th>
               </tr>
             </thead>
@@ -181,6 +182,9 @@ export function AddMemberSheet({ groupId, onClose }: AddMemberSheetProps) {
                     <Flex align="center">
                       <Skeleton style={{ width: 16, height: 16, borderRadius: 4 }} />
                     </Flex>
+                  </td>
+                  <td style={styles.skeletonCell}>
+                    <Skeleton style={styles.skeletonLine} />
                   </td>
                   <td style={styles.skeletonCell}>
                     <Skeleton style={styles.skeletonLine} />
@@ -210,13 +214,14 @@ export function AddMemberSheet({ groupId, onClose }: AddMemberSheetProps) {
                   />
                 </Flex>
               </th>
+              <th style={styles.tableHeaderCell}>uuid</th>
               <th style={styles.tableHeaderCell}>姓名</th>
             </tr>
           </thead>
           <tbody>
             {!isLoading && users.length === 0 ? (
               <tr>
-                <td colSpan={2} style={styles.emptyText}>
+                <td colSpan={3} style={styles.emptyText}>
                   追加できるユーザーがいません。
                 </td>
               </tr>
@@ -236,6 +241,7 @@ export function AddMemberSheet({ groupId, onClose }: AddMemberSheetProps) {
                       />
                     </Flex>
                   </td>
+                  <td style={styles.tableCellUuid}>{user.uuid}</td>
                   <td style={styles.tableCellName}>
                     {user.last_name} {user.first_name}
                   </td>

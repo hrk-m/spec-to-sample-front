@@ -48,7 +48,7 @@ function MemberRow({
           </Flex>
         </td>
       )}
-      <td style={styles.tableCellId}>{member.id}</td>
+      <td style={styles.tableCellId}>{member.uuid}</td>
       <td
         style={{
           ...styles.tableCellName,
@@ -240,7 +240,7 @@ export function MemberList({ groupId, onMemberClick, onRefetch }: MemberListProp
                   </Flex>
                 </th>
               )}
-              <th style={styles.tableHeaderCell}>id</th>
+              <th style={styles.tableHeaderCellUuid}>uuid</th>
               <th style={styles.tableHeaderCell}>姓名</th>
             </tr>
           </thead>

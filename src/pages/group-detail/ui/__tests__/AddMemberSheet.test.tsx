@@ -65,8 +65,18 @@ describe("AddMemberSheet", () => {
     vi.mocked(useNonMemberList).mockReturnValue({
       ...defaultHookReturn,
       users: [
-        { id: 1, first_name: "太郎", last_name: "山田" },
-        { id: 2, first_name: "花子", last_name: "鈴木" },
+        {
+          id: 1,
+          uuid: "00000000-0000-0000-0000-000000000001",
+          first_name: "太郎",
+          last_name: "山田",
+        },
+        {
+          id: 2,
+          uuid: "00000000-0000-0000-0000-000000000002",
+          first_name: "花子",
+          last_name: "鈴木",
+        },
       ],
       total: 2,
     });
@@ -81,11 +91,25 @@ describe("AddMemberSheet", () => {
     const user = userEvent.setup();
     vi.mocked(useNonMemberList).mockReturnValue({
       ...defaultHookReturn,
-      users: [{ id: 1, first_name: "太郎", last_name: "山田" }],
+      users: [
+        {
+          id: 1,
+          uuid: "00000000-0000-0000-0000-000000000001",
+          first_name: "太郎",
+          last_name: "山田",
+        },
+      ],
       total: 1,
     });
     vi.mocked(addGroupMembers).mockResolvedValueOnce({
-      members: [{ id: 1, first_name: "太郎", last_name: "山田" }],
+      members: [
+        {
+          id: 1,
+          uuid: "00000000-0000-0000-0000-000000000001",
+          first_name: "太郎",
+          last_name: "山田",
+        },
+      ],
     });
 
     render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
@@ -104,11 +128,25 @@ describe("AddMemberSheet", () => {
     const user = userEvent.setup();
     vi.mocked(useNonMemberList).mockReturnValue({
       ...defaultHookReturn,
-      users: [{ id: 1, first_name: "太郎", last_name: "山田" }],
+      users: [
+        {
+          id: 1,
+          uuid: "00000000-0000-0000-0000-000000000001",
+          first_name: "太郎",
+          last_name: "山田",
+        },
+      ],
       total: 1,
     });
     vi.mocked(addGroupMembers).mockResolvedValueOnce({
-      members: [{ id: 1, first_name: "太郎", last_name: "山田" }],
+      members: [
+        {
+          id: 1,
+          uuid: "00000000-0000-0000-0000-000000000001",
+          first_name: "太郎",
+          last_name: "山田",
+        },
+      ],
     });
 
     render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
@@ -127,7 +165,14 @@ describe("AddMemberSheet", () => {
     const user = userEvent.setup();
     vi.mocked(useNonMemberList).mockReturnValue({
       ...defaultHookReturn,
-      users: [{ id: 1, first_name: "太郎", last_name: "山田" }],
+      users: [
+        {
+          id: 1,
+          uuid: "00000000-0000-0000-0000-000000000001",
+          first_name: "太郎",
+          last_name: "山田",
+        },
+      ],
       total: 1,
     });
     vi.mocked(addGroupMembers).mockRejectedValueOnce(new Error("409 Conflict"));
@@ -150,7 +195,14 @@ describe("AddMemberSheet", () => {
     const user = userEvent.setup();
     vi.mocked(useNonMemberList).mockReturnValue({
       ...defaultHookReturn,
-      users: [{ id: 1, first_name: "太郎", last_name: "山田" }],
+      users: [
+        {
+          id: 1,
+          uuid: "00000000-0000-0000-0000-000000000001",
+          first_name: "太郎",
+          last_name: "山田",
+        },
+      ],
       total: 1,
     });
     vi.mocked(addGroupMembers).mockRejectedValueOnce(new Error("500 Internal Server Error"));
@@ -185,7 +237,14 @@ describe("AddMemberSheet", () => {
     vi.mocked(useNonMemberList).mockReturnValue({
       ...defaultHookReturn,
       isLoading: true,
-      users: [{ id: 1, first_name: "太郎", last_name: "山田" }],
+      users: [
+        {
+          id: 1,
+          uuid: "00000000-0000-0000-0000-000000000001",
+          first_name: "太郎",
+          last_name: "山田",
+        },
+      ],
       total: 1,
     });
 
@@ -207,7 +266,14 @@ describe("AddMemberSheet", () => {
     it("Previous/Next ボタンが存在しない", () => {
       vi.mocked(useNonMemberList).mockReturnValue({
         ...defaultHookReturn,
-        users: [{ id: 1, first_name: "太郎", last_name: "山田" }],
+        users: [
+          {
+            id: 1,
+            uuid: "00000000-0000-0000-0000-000000000001",
+            first_name: "太郎",
+            last_name: "山田",
+          },
+        ],
         total: 1,
       });
 
@@ -220,7 +286,14 @@ describe("AddMemberSheet", () => {
     it("Page X of Y テキストが存在しない", () => {
       vi.mocked(useNonMemberList).mockReturnValue({
         ...defaultHookReturn,
-        users: [{ id: 1, first_name: "太郎", last_name: "山田" }],
+        users: [
+          {
+            id: 1,
+            uuid: "00000000-0000-0000-0000-000000000001",
+            first_name: "太郎",
+            last_name: "山田",
+          },
+        ],
         total: 1,
       });
 
@@ -240,8 +313,18 @@ describe("AddMemberSheet", () => {
     vi.mocked(useNonMemberList).mockReturnValue({
       ...defaultHookReturn,
       users: [
-        { id: 1, first_name: "太郎", last_name: "山田" },
-        { id: 2, first_name: "花子", last_name: "鈴木" },
+        {
+          id: 1,
+          uuid: "00000000-0000-0000-0000-000000000001",
+          first_name: "太郎",
+          last_name: "山田",
+        },
+        {
+          id: 2,
+          uuid: "00000000-0000-0000-0000-000000000002",
+          first_name: "花子",
+          last_name: "鈴木",
+        },
       ],
       total: 2,
       fetchMoreError: "Failed to fetch",
@@ -264,7 +347,14 @@ describe("AddMemberSheet", () => {
   it("「一括追加」ボタンが検索フォームの下・ユーザー一覧の上に表示される", () => {
     vi.mocked(useNonMemberList).mockReturnValue({
       ...defaultHookReturn,
-      users: [{ id: 1, first_name: "太郎", last_name: "山田" }],
+      users: [
+        {
+          id: 1,
+          uuid: "00000000-0000-0000-0000-000000000001",
+          first_name: "太郎",
+          last_name: "山田",
+        },
+      ],
       total: 1,
     });
 
@@ -286,7 +376,14 @@ describe("AddMemberSheet", () => {
   it("初期状態では「一括追加」ボタンが disabled である", () => {
     vi.mocked(useNonMemberList).mockReturnValue({
       ...defaultHookReturn,
-      users: [{ id: 1, first_name: "太郎", last_name: "山田" }],
+      users: [
+        {
+          id: 1,
+          uuid: "00000000-0000-0000-0000-000000000001",
+          first_name: "太郎",
+          last_name: "山田",
+        },
+      ],
       total: 1,
     });
 
@@ -299,7 +396,14 @@ describe("AddMemberSheet", () => {
     const user = userEvent.setup();
     vi.mocked(useNonMemberList).mockReturnValue({
       ...defaultHookReturn,
-      users: [{ id: 1, first_name: "太郎", last_name: "山田" }],
+      users: [
+        {
+          id: 1,
+          uuid: "00000000-0000-0000-0000-000000000001",
+          first_name: "太郎",
+          last_name: "山田",
+        },
+      ],
       total: 1,
     });
 
@@ -314,7 +418,14 @@ describe("AddMemberSheet", () => {
     const user = userEvent.setup();
     vi.mocked(useNonMemberList).mockReturnValue({
       ...defaultHookReturn,
-      users: [{ id: 1, first_name: "太郎", last_name: "山田" }],
+      users: [
+        {
+          id: 1,
+          uuid: "00000000-0000-0000-0000-000000000001",
+          first_name: "太郎",
+          last_name: "山田",
+        },
+      ],
       total: 1,
     });
 
@@ -330,7 +441,14 @@ describe("AddMemberSheet", () => {
   it("DOM 内に「一括追加」ボタンが 1 つだけ存在する（下部に重複しない）", () => {
     vi.mocked(useNonMemberList).mockReturnValue({
       ...defaultHookReturn,
-      users: [{ id: 1, first_name: "太郎", last_name: "山田" }],
+      users: [
+        {
+          id: 1,
+          uuid: "00000000-0000-0000-0000-000000000001",
+          first_name: "太郎",
+          last_name: "山田",
+        },
+      ],
       total: 1,
     });
 
@@ -343,7 +461,14 @@ describe("AddMemberSheet", () => {
   it("「姓名」の列ヘッダーが columnheader ロールで取得できる", () => {
     vi.mocked(useNonMemberList).mockReturnValue({
       ...defaultHookReturn,
-      users: [{ id: 1, first_name: "太郎", last_name: "山田" }],
+      users: [
+        {
+          id: 1,
+          uuid: "00000000-0000-0000-0000-000000000001",
+          first_name: "太郎",
+          last_name: "山田",
+        },
+      ],
       total: 1,
     });
 
@@ -352,10 +477,36 @@ describe("AddMemberSheet", () => {
     expect(screen.getByRole("columnheader", { name: "姓名" })).toBeInTheDocument();
   });
 
+  it("「uuid」の列ヘッダーが columnheader ロールで取得できる", () => {
+    vi.mocked(useNonMemberList).mockReturnValue({
+      ...defaultHookReturn,
+      users: [
+        {
+          id: 1,
+          uuid: "00000000-0000-0000-0000-000000000001",
+          first_name: "太郎",
+          last_name: "山田",
+        },
+      ],
+      total: 1,
+    });
+
+    render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+
+    expect(screen.getByRole("columnheader", { name: "uuid" })).toBeInTheDocument();
+  });
+
   it("アバターアイコン（イニシャル円形）が DOM に存在しない", () => {
     vi.mocked(useNonMemberList).mockReturnValue({
       ...defaultHookReturn,
-      users: [{ id: 1, first_name: "太郎", last_name: "山田" }],
+      users: [
+        {
+          id: 1,
+          uuid: "00000000-0000-0000-0000-000000000001",
+          first_name: "太郎",
+          last_name: "山田",
+        },
+      ],
       total: 1,
     });
 
@@ -370,7 +521,14 @@ describe("AddMemberSheet", () => {
   it("選択列ヘッダー th[aria-label='選択'] が DOM に存在する", () => {
     vi.mocked(useNonMemberList).mockReturnValue({
       ...defaultHookReturn,
-      users: [{ id: 1, first_name: "太郎", last_name: "山田" }],
+      users: [
+        {
+          id: 1,
+          uuid: "00000000-0000-0000-0000-000000000001",
+          first_name: "太郎",
+          last_name: "山田",
+        },
+      ],
       total: 1,
     });
 
@@ -385,8 +543,18 @@ describe("AddMemberSheet", () => {
       vi.mocked(useNonMemberList).mockReturnValue({
         ...defaultHookReturn,
         users: [
-          { id: 1, first_name: "太郎", last_name: "山田" },
-          { id: 2, first_name: "花子", last_name: "鈴木" },
+          {
+            id: 1,
+            uuid: "00000000-0000-0000-0000-000000000001",
+            first_name: "太郎",
+            last_name: "山田",
+          },
+          {
+            id: 2,
+            uuid: "00000000-0000-0000-0000-000000000002",
+            first_name: "花子",
+            last_name: "鈴木",
+          },
         ],
         total: 2,
       });
@@ -406,8 +574,18 @@ describe("AddMemberSheet", () => {
       vi.mocked(useNonMemberList).mockReturnValue({
         ...defaultHookReturn,
         users: [
-          { id: 1, first_name: "太郎", last_name: "山田" },
-          { id: 2, first_name: "花子", last_name: "鈴木" },
+          {
+            id: 1,
+            uuid: "00000000-0000-0000-0000-000000000001",
+            first_name: "太郎",
+            last_name: "山田",
+          },
+          {
+            id: 2,
+            uuid: "00000000-0000-0000-0000-000000000002",
+            first_name: "花子",
+            last_name: "鈴木",
+          },
         ],
         total: 2,
       });
@@ -429,8 +607,18 @@ describe("AddMemberSheet", () => {
       vi.mocked(useNonMemberList).mockReturnValue({
         ...defaultHookReturn,
         users: [
-          { id: 1, first_name: "太郎", last_name: "山田" },
-          { id: 2, first_name: "花子", last_name: "鈴木" },
+          {
+            id: 1,
+            uuid: "00000000-0000-0000-0000-000000000001",
+            first_name: "太郎",
+            last_name: "山田",
+          },
+          {
+            id: 2,
+            uuid: "00000000-0000-0000-0000-000000000002",
+            first_name: "花子",
+            last_name: "鈴木",
+          },
         ],
         total: 2,
       });
@@ -450,8 +638,18 @@ describe("AddMemberSheet", () => {
       vi.mocked(useNonMemberList).mockReturnValue({
         ...defaultHookReturn,
         users: [
-          { id: 1, first_name: "太郎", last_name: "山田" },
-          { id: 2, first_name: "花子", last_name: "鈴木" },
+          {
+            id: 1,
+            uuid: "00000000-0000-0000-0000-000000000001",
+            first_name: "太郎",
+            last_name: "山田",
+          },
+          {
+            id: 2,
+            uuid: "00000000-0000-0000-0000-000000000002",
+            first_name: "花子",
+            last_name: "鈴木",
+          },
         ],
         total: 2,
       });
@@ -477,8 +675,18 @@ describe("AddMemberSheet", () => {
       vi.mocked(useNonMemberList).mockReturnValue({
         ...defaultHookReturn,
         users: [
-          { id: 1, first_name: "太郎", last_name: "山田" },
-          { id: 2, first_name: "花子", last_name: "鈴木" },
+          {
+            id: 1,
+            uuid: "00000000-0000-0000-0000-000000000001",
+            first_name: "太郎",
+            last_name: "山田",
+          },
+          {
+            id: 2,
+            uuid: "00000000-0000-0000-0000-000000000002",
+            first_name: "花子",
+            last_name: "鈴木",
+          },
         ],
         total: 2,
       });
@@ -508,8 +716,18 @@ describe("AddMemberSheet", () => {
       vi.mocked(useNonMemberList).mockReturnValue({
         ...defaultHookReturn,
         users: [
-          { id: 1, first_name: "太郎", last_name: "山田" },
-          { id: 2, first_name: "花子", last_name: "鈴木" },
+          {
+            id: 1,
+            uuid: "00000000-0000-0000-0000-000000000001",
+            first_name: "太郎",
+            last_name: "山田",
+          },
+          {
+            id: 2,
+            uuid: "00000000-0000-0000-0000-000000000002",
+            first_name: "花子",
+            last_name: "鈴木",
+          },
         ],
         total: 2,
       });

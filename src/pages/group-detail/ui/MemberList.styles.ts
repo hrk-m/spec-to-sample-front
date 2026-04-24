@@ -35,11 +35,22 @@ export const styles = {
     overflow: "hidden",
     boxShadow: "0 18px 42px rgba(15, 23, 42, 0.06)",
     marginTop: 12,
+    tableLayout: "fixed" as const,
   },
   tableHeader: {
     background: colors.surfaceRaised,
   },
   tableHeaderCell: {
+    padding: "12px 16px",
+    fontSize: 12,
+    fontWeight: 600,
+    color: colors.textTertiary,
+    textAlign: "left" as const,
+    borderBottom: `1px solid ${colors.separator}`,
+    letterSpacing: 0.4,
+    textTransform: "uppercase" as const,
+  },
+  tableHeaderCellUuid: {
     padding: "12px 16px",
     fontSize: 12,
     fontWeight: 600,
@@ -63,10 +74,12 @@ export const styles = {
   tableCellId: {
     padding: "13px 16px",
     fontSize: 14,
-    fontWeight: 600,
+    fontWeight: 400,
     color: colors.textSecondary,
     verticalAlign: "middle" as const,
-    width: 60,
+    whiteSpace: "nowrap" as const,
+    overflow: "hidden" as const,
+    textOverflow: "ellipsis",
   },
   tableCellName: {
     padding: "13px 16px",
@@ -75,6 +88,9 @@ export const styles = {
     color: colors.textPrimary,
     verticalAlign: "middle" as const,
     cursor: "pointer",
+    whiteSpace: "nowrap" as const,
+    overflow: "hidden" as const,
+    textOverflow: "ellipsis",
   },
   tableCellCheckbox: {
     padding: "13px 16px",

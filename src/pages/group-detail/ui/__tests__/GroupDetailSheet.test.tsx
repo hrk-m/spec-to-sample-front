@@ -35,8 +35,18 @@ const mockGroup: GroupDetail = {
 
 const mockMembersResponse: MembersResponse = {
   members: [
-    { id: 1, first_name: "Taro", last_name: "Yamada" },
-    { id: 2, first_name: "Hanako", last_name: "Sato" },
+    {
+      id: 1,
+      uuid: "00000000-0000-0000-0000-000000000001",
+      first_name: "Taro",
+      last_name: "Yamada",
+    },
+    {
+      id: 2,
+      uuid: "00000000-0000-0000-0000-000000000002",
+      first_name: "Hanako",
+      last_name: "Sato",
+    },
   ],
   total: 2,
 };
@@ -105,6 +115,7 @@ describe("GroupDetailSheet", () => {
     expect(onMemberClick).toHaveBeenCalledTimes(1);
     expect(onMemberClick).toHaveBeenCalledWith({
       id: 1,
+      uuid: "00000000-0000-0000-0000-000000000001",
       first_name: "Taro",
       last_name: "Yamada",
     });

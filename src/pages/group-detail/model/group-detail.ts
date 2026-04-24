@@ -7,6 +7,7 @@ export type GroupDetail = {
 
 export type UserSummary = {
   id: number;
+  uuid: string;
   first_name: string;
   last_name: string;
 };

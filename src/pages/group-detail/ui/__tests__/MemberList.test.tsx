@@ -20,8 +20,18 @@ vi.mock("@/pages/group-detail/api/delete-group-members", () => ({
 
 const mockMembersResponse: MembersResponse = {
   members: [
-    { id: 1, first_name: "Taro", last_name: "Yamada" },
-    { id: 2, first_name: "Hanako", last_name: "Sato" },
+    {
+      id: 1,
+      uuid: "00000000-0000-0000-0000-000000000001",
+      first_name: "Taro",
+      last_name: "Yamada",
+    },
+    {
+      id: 2,
+      uuid: "00000000-0000-0000-0000-000000000002",
+      first_name: "Hanako",
+      last_name: "Sato",
+    },
   ],
   total: 2,
 };
@@ -52,7 +62,7 @@ describe("MemberList", () => {
     expect(screen.getByText("Sato Hanako")).toBeInTheDocument();
   });
 
-  it("列ヘッダー id と 姓名 が columnheader ロールで取得できる", async () => {
+  it("列ヘッダー uuid と 姓名 が columnheader ロールで取得できる", async () => {
     vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
 
     render(<MemberList groupId={1} />);
@@ -61,11 +71,11 @@ describe("MemberList", () => {
       expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
     });
 
-    expect(screen.getByRole("columnheader", { name: "id" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "uuid" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "姓名" })).toBeInTheDocument();
   });
 
-  it("onRefetch 渡し時に 選択・id・姓名 の 3 列ヘッダーがすべて columnheader ロールで取得できる", async () => {
+  it("onRefetch 渡し時に 選択・uuid・姓名 の 3 列ヘッダーがすべて columnheader ロールで取得できる", async () => {
     vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
 
     render(<MemberList groupId={1} onRefetch={vi.fn()} />);
@@ -74,7 +84,7 @@ describe("MemberList", () => {
       expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
     });
 
-    expect(screen.getByRole("columnheader", { name: "id" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "uuid" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "姓名" })).toBeInTheDocument();
     // 選択列ヘッダーは aria-label="選択" を持つ <th> 要素として存在する
     const selectionHeader = document.querySelector('th[aria-label="選択"]');
@@ -119,6 +129,7 @@ describe("MemberList", () => {
     const manyMembers: MembersResponse = {
       members: Array.from({ length: 50 }, (_, i) => ({
         id: i + 1,
+        uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
         first_name: `First${String(i + 1)}`,
         last_name: `Last${String(i + 1)}`,
       })),
@@ -153,6 +164,7 @@ describe("MemberList", () => {
     const manyMembers: MembersResponse = {
       members: Array.from({ length: 55 }, (_, i) => ({
         id: i + 1,
+        uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
         first_name: `First${String(i + 1)}`,
         last_name: `Last${String(i + 1)}`,
       })),
@@ -195,7 +207,14 @@ describe("MemberList", () => {
     vi.mocked(fetchGroupMembers)
       .mockResolvedValueOnce(mockMembersResponse)
       .mockResolvedValueOnce({
-        members: [{ id: 1, first_name: "Taro", last_name: "Yamada" }],
+        members: [
+          {
+            id: 1,
+            uuid: "00000000-0000-0000-0000-000000000001",
+            first_name: "Taro",
+            last_name: "Yamada",
+          },
+        ],
         total: 1,
       });
 
@@ -219,10 +238,18 @@ describe("MemberList", () => {
   it("sentinel が visible になったとき lastBatchSize === FETCH_LIMIT なら次 offset でフェッチする", async () => {
     const initialMembers = Array.from({ length: FETCH_LIMIT }, (_, i) => ({
       id: i + 1,
+      uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
       first_name: `First${String(i + 1)}`,
       last_name: `Last${String(i + 1)}`,
     }));
-    const additionalMembers = [{ id: FETCH_LIMIT + 1, first_name: "Extra", last_name: "Member" }];
+    const additionalMembers = [
+      {
+        id: FETCH_LIMIT + 1,
+        uuid: "00000000-0000-0000-0000-000000000099",
+        first_name: "Extra",
+        last_name: "Member",
+      },
+    ];
 
     vi.mocked(fetchGroupMembers)
       .mockResolvedValueOnce({ members: initialMembers, total: FETCH_LIMIT + 1 })
@@ -264,6 +291,7 @@ describe("MemberList", () => {
     expect(onMemberClick).toHaveBeenCalledTimes(1);
     expect(onMemberClick).toHaveBeenCalledWith({
       id: 1,
+      uuid: "00000000-0000-0000-0000-000000000001",
       first_name: "Taro",
       last_name: "Yamada",
     });
@@ -272,6 +300,7 @@ describe("MemberList", () => {
   it("追加フェッチ失敗時にリスト末尾にエラーメッセージが表示され、既存アイテムは維持される", async () => {
     const initialMembers = Array.from({ length: FETCH_LIMIT }, (_, i) => ({
       id: i + 1,
+      uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
       first_name: `First${String(i + 1)}`,
       last_name: `Last${String(i + 1)}`,
     }));
@@ -332,7 +361,14 @@ describe("MemberList", () => {
     vi.mocked(fetchGroupMembers)
       .mockResolvedValueOnce(mockMembersResponse)
       .mockResolvedValueOnce({
-        members: [{ id: 1, first_name: "Taro", last_name: "Yamada" }],
+        members: [
+          {
+            id: 1,
+            uuid: "00000000-0000-0000-0000-000000000001",
+            first_name: "Taro",
+            last_name: "Yamada",
+          },
+        ],
         total: 1,
       });
 

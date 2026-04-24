@@ -21,7 +21,14 @@ describe("useNonMemberList", () => {
   });
 
   it("マウント時に API を呼び出し users と total をセットする", async () => {
-    const mockUsers = [{ id: 1, first_name: "太郎", last_name: "山田" }];
+    const mockUsers = [
+      {
+        id: 1,
+        uuid: "00000000-0000-0000-0000-000000000001",
+        first_name: "太郎",
+        last_name: "山田",
+      },
+    ];
     vi.mocked(fetchNonMembers).mockResolvedValueOnce({ users: mockUsers, total: 1 });
 
     const { result } = renderHook(() => useNonMemberList(1));
@@ -86,7 +93,14 @@ describe("useNonMemberList", () => {
   });
 
   it("同一 groupId で 2 回マウントしたとき 2 回目はキャッシュから読みロード不要になる", async () => {
-    const mockUsers = [{ id: 1, first_name: "太郎", last_name: "山田" }];
+    const mockUsers = [
+      {
+        id: 1,
+        uuid: "00000000-0000-0000-0000-000000000001",
+        first_name: "太郎",
+        last_name: "山田",
+      },
+    ];
     vi.mocked(fetchNonMembers).mockResolvedValueOnce({ users: mockUsers, total: 1 });
 
     // 1 回目マウント → API が呼ばれる
@@ -121,6 +135,7 @@ describe("useNonMemberList", () => {
     it("users は cachedUsers の全件を返す", async () => {
       const mockUsers = Array.from({ length: 55 }, (_, i) => ({
         id: i + 1,
+        uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
         first_name: `名${i + 1}`,
         last_name: `姓${i + 1}`,
       }));
@@ -139,11 +154,13 @@ describe("useNonMemberList", () => {
     it("sentinel が visible になったら doFetchMore を呼ぶ（lastBatchSize === FETCH_LIMIT のとき）", async () => {
       const initialUsers = Array.from({ length: FETCH_LIMIT }, (_, i) => ({
         id: i + 1,
+        uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
         first_name: `名${i + 1}`,
         last_name: `姓${i + 1}`,
       }));
       const additionalUsers = Array.from({ length: 10 }, (_, i) => ({
         id: FETCH_LIMIT + i + 1,
+        uuid: `00000000-0000-0000-0000-${String(FETCH_LIMIT + i + 1).padStart(12, "0")}`,
         first_name: `名${FETCH_LIMIT + i + 1}`,
         last_name: `姓${FETCH_LIMIT + i + 1}`,
       }));
@@ -175,11 +192,13 @@ describe("useNonMemberList", () => {
     it("sentinel が visible になった後に追加データが表示される", async () => {
       const initialUsers = Array.from({ length: FETCH_LIMIT }, (_, i) => ({
         id: i + 1,
+        uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
         first_name: `名${i + 1}`,
         last_name: `姓${i + 1}`,
       }));
       const additionalUsers = Array.from({ length: 10 }, (_, i) => ({
         id: FETCH_LIMIT + i + 1,
+        uuid: `00000000-0000-0000-0000-${String(FETCH_LIMIT + i + 1).padStart(12, "0")}`,
         first_name: `名${FETCH_LIMIT + i + 1}`,
         last_name: `姓${FETCH_LIMIT + i + 1}`,
       }));
@@ -208,6 +227,7 @@ describe("useNonMemberList", () => {
     it("追加フェッチ失敗時に fetchMoreError がセットされ既存ユーザーは維持される", async () => {
       const initialUsers = Array.from({ length: FETCH_LIMIT }, (_, i) => ({
         id: i + 1,
+        uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
         first_name: `名${i + 1}`,
         last_name: `姓${i + 1}`,
       }));

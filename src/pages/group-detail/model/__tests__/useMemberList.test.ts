@@ -21,7 +21,14 @@ describe("useMemberList", () => {
   });
 
   it("マウント時に API を呼び出し members と total をセットする", async () => {
-    const mockMembers = [{ id: 1, first_name: "太郎", last_name: "山田" }];
+    const mockMembers = [
+      {
+        id: 1,
+        uuid: "00000000-0000-0000-0000-000000000001",
+        first_name: "太郎",
+        last_name: "山田",
+      },
+    ];
     vi.mocked(fetchGroupMembers).mockResolvedValueOnce({ members: mockMembers, total: 1 });
 
     const { result } = renderHook(() => useMemberList(1));
@@ -101,6 +108,7 @@ describe("useMemberList", () => {
     it("members は cachedMembers の全件を返す", async () => {
       const mockMembers = Array.from({ length: 55 }, (_, i) => ({
         id: i + 1,
+        uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
         first_name: `名${i + 1}`,
         last_name: `姓${i + 1}`,
       }));
@@ -119,11 +127,13 @@ describe("useMemberList", () => {
     it("sentinel が visible になったら doFetchMore を呼ぶ（lastBatchSize === FETCH_LIMIT のとき）", async () => {
       const initialMembers = Array.from({ length: FETCH_LIMIT }, (_, i) => ({
         id: i + 1,
+        uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
         first_name: `名${i + 1}`,
         last_name: `姓${i + 1}`,
       }));
       const additionalMembers = Array.from({ length: 10 }, (_, i) => ({
         id: FETCH_LIMIT + i + 1,
+        uuid: `00000000-0000-0000-0000-${String(FETCH_LIMIT + i + 1).padStart(12, "0")}`,
         first_name: `名${FETCH_LIMIT + i + 1}`,
         last_name: `姓${FETCH_LIMIT + i + 1}`,
       }));
@@ -155,11 +165,13 @@ describe("useMemberList", () => {
     it("sentinel が visible になった後に追加データが表示される", async () => {
       const initialMembers = Array.from({ length: FETCH_LIMIT }, (_, i) => ({
         id: i + 1,
+        uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
         first_name: `名${i + 1}`,
         last_name: `姓${i + 1}`,
       }));
       const additionalMembers = Array.from({ length: 10 }, (_, i) => ({
         id: FETCH_LIMIT + i + 1,
+        uuid: `00000000-0000-0000-0000-${String(FETCH_LIMIT + i + 1).padStart(12, "0")}`,
         first_name: `名${FETCH_LIMIT + i + 1}`,
         last_name: `姓${FETCH_LIMIT + i + 1}`,
       }));
@@ -188,6 +200,7 @@ describe("useMemberList", () => {
     it("追加フェッチ失敗時に fetchMoreError がセットされ既存メンバーは維持される", async () => {
       const initialMembers = Array.from({ length: FETCH_LIMIT }, (_, i) => ({
         id: i + 1,
+        uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
         first_name: `名${i + 1}`,
         last_name: `姓${i + 1}`,
       }));

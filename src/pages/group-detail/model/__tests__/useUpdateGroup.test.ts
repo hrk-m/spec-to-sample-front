@@ -38,6 +38,7 @@ describe("useUpdateGroup", () => {
       name: "updated-group",
       description: "updated desc",
       member_count: 5,
+      subgroups: [],
     };
     vi.mocked(updateGroup).mockResolvedValueOnce(mockGroup);
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { fetchGroup } from "@/pages/group-detail/api/fetch-group";
-import type { GroupDetail } from "@/pages/group-detail/model/group-detail";
+import type { GroupDetail, SubgroupSummary } from "@/pages/group-detail/model/group-detail";
 
 const groupDetailCache = new Map<number, GroupDetail>();
 
@@ -51,5 +51,7 @@ export function useGroupDetail(groupId: number) {
     };
   }, [groupId, refetchKey]);
 
-  return { group, error, isLoading, refetch };
+  const subgroups: SubgroupSummary[] = group?.subgroups ?? [];
+
+  return { group, error, isLoading, refetch, subgroups };
 }

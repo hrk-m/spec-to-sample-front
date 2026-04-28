@@ -60,6 +60,7 @@ describe("EditGroupDialog", () => {
       name: "new-name",
       description: "new desc",
       member_count: 5,
+      subgroups: [],
     });
 
     render(<EditGroupDialog {...defaultProps} />);
@@ -85,6 +86,7 @@ describe("EditGroupDialog", () => {
       name: "dev-team",
       description: "Development team",
       member_count: 5,
+      subgroups: [],
     });
 
     render(<EditGroupDialog {...defaultProps} onOpenChange={onOpenChange} />);

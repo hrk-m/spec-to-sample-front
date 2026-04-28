@@ -37,6 +37,11 @@ inclusion: always
   で取得した全グループ一覧をラジオ選択（単一選択）して追加する。現在のグループ自身および既に直接の子グループになっているものは一覧から除外する。検索入力は 300ms デバウンス付き。追加成功時は
   `onSuccess()`（`refetch`）→
   `onClose()`（`closeSheet()`）を呼び出してグループ詳細を更新する。409 競合エラーは「すでに追加済みです」と表示する
+- サブグループ削除（`DELETE /api/v1/groups/:id/subgroups/:childId`
+  エンドポイント）。サブグループ一覧の各行に [Delete] ボタンを配置し、クリックすると
+  `DeleteSubgroupDialog`（Radix UI `AlertDialog`）で確認ダイアログを表示する。確認後に
+  `useDeleteSubgroup` フックが API を呼び出し、成功時はダイアログを閉じて `refetch`
+  でグループ詳細を更新する。404 エラーは「対象のサブグループ関係が見つかりませんでした」、その他エラーは「サブグループの削除に失敗しました。しばらくしてから再度お試しください」と表示し、ダイアログは閉じない
 - メンバー削除（`DELETE /api/v1/groups/:id/members`
   エンドポイント）。メンバー一覧のチェックボックスで複数選択し、「削除」ボタン（`onRefetch`
   prop が渡された場合のみ表示）から Radix UI `AlertDialog`

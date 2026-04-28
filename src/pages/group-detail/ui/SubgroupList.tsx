@@ -1,7 +1,8 @@
-import { Box, Flex, Text } from "@radix-ui/themes";
-import { RiCloseLine } from "react-icons/ri";
+import { useState } from "react";
+import { Box, Button, Flex, Text } from "@radix-ui/themes";
 
 import type { SubgroupSummary } from "@/pages/group-detail/model/group-detail";
+import { DeleteSubgroupDialog } from "@/pages/group-detail/ui/DeleteSubgroupDialog";
 import { appColors } from "@/shared/ui";
 
 const colors = {
@@ -9,7 +10,6 @@ const colors = {
   surfaceRaised: appColors.surfaceRaised,
   textPrimary: appColors.textPrimary,
   textSecondary: appColors.textSecondary,
-  textTertiary: appColors.textTertiary,
   error: appColors.error,
   errorBackground: appColors.errorBackground,
   errorBorder: appColors.errorBorder,
@@ -67,27 +67,16 @@ const errorStyle = {
   border: `1px solid ${colors.errorBorder}`,
 } as const;
 
-const deleteButtonStyle = {
-  background: "none",
-  border: "none",
-  padding: 4,
-  cursor: "pointer",
-  color: colors.textTertiary,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: 6,
-  flexShrink: 0,
-  lineHeight: 1,
-} as const;
-
 type SubgroupListProps = {
+  groupId: number;
   subgroups: SubgroupSummary[];
   error: string | null;
-  onDelete: (subgroupId: number) => void;
+  refetch: () => void;
 };
 
-export function SubgroupList({ subgroups, error, onDelete }: SubgroupListProps) {
+export function SubgroupList({ groupId, subgroups, error, refetch }: SubgroupListProps) {
+  const [deletingSubgroupId, setDeletingSubgroupId] = useState<number | null>(null);
+
   if (error) {
     return (
       <Text as="p" style={errorStyle}>
@@ -96,46 +85,54 @@ export function SubgroupList({ subgroups, error, onDelete }: SubgroupListProps) 
     );
   }
 
-  if (subgroups.length === 0) {
-    return (
-      <Box style={{ ...cardStyle, marginTop: 12 }}>
-        <Text as="p" style={emptyStyle}>
-          サブグループはまだありません
-        </Text>
-      </Box>
-    );
-  }
-
   return (
-    <Box style={{ ...cardStyle, marginTop: 12 }}>
-      {subgroups.map((subgroup, index) => (
-        <Flex
-          key={subgroup.id}
-          style={{
-            ...rowStyle,
-            ...(index < subgroups.length - 1 ? rowBorderStyle : {}),
-          }}
-        >
-          <Box style={{ minWidth: 0, flex: 1 }}>
-            <Text as="p" style={nameStyle}>
-              {subgroup.name}
-            </Text>
-            {subgroup.description && (
-              <Text as="p" style={descStyle}>
-                {subgroup.description}
-              </Text>
-            )}
-          </Box>
-          <button
-            type="button"
-            aria-label={`削除: ${subgroup.name}`}
-            style={deleteButtonStyle}
-            onClick={() => onDelete(subgroup.id)}
-          >
-            <RiCloseLine size={18} />
-          </button>
-        </Flex>
-      ))}
-    </Box>
+    <>
+      <Box style={{ ...cardStyle, marginTop: 12 }}>
+        {subgroups.length === 0 ? (
+          <Text as="p" style={emptyStyle}>
+            サブグループはまだありません
+          </Text>
+        ) : (
+          subgroups.map((subgroup, index) => (
+            <Flex
+              key={subgroup.id}
+              style={{
+                ...rowStyle,
+                ...(index < subgroups.length - 1 ? rowBorderStyle : {}),
+              }}
+            >
+              <Box style={{ minWidth: 0, flex: 1 }}>
+                <Text as="p" style={nameStyle}>
+                  {subgroup.name}
+                </Text>
+                {subgroup.description && (
+                  <Text as="p" style={descStyle}>
+                    {subgroup.description}
+                  </Text>
+                )}
+              </Box>
+              <Button
+                variant="soft"
+                color="red"
+                radius="full"
+                size="1"
+                onClick={() => setDeletingSubgroupId(subgroup.id)}
+              >
+                Delete
+              </Button>
+            </Flex>
+          ))
+        )}
+      </Box>
+      <DeleteSubgroupDialog
+        open={deletingSubgroupId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeletingSubgroupId(null);
+        }}
+        groupId={groupId}
+        subgroupId={deletingSubgroupId}
+        onSuccess={refetch}
+      />
+    </>
   );
 }

@@ -64,7 +64,7 @@ describe("AddSubgroupSheet", () => {
     }, WAIT_OPTIONS);
 
     await user.click(screen.getByText("Group B"));
-    await user.click(screen.getByRole("button", { name: "追加する" }));
+    await user.click(screen.getByRole("button", { name: "追加" }));
 
     await waitFor(() => {
       expect(addSubgroup).toHaveBeenCalledWith({ groupId: 1, childGroupId: 2 });
@@ -88,7 +88,7 @@ describe("AddSubgroupSheet", () => {
       expect(screen.getByText("Group B")).toBeInTheDocument();
     }, WAIT_OPTIONS);
 
-    expect(screen.getByRole("button", { name: "追加する" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "追加" })).toBeDisabled();
   });
 
   // テスト #3: 分岐条件 — グループ選択後は追加ボタン enabled
@@ -110,7 +110,7 @@ describe("AddSubgroupSheet", () => {
 
     await user.click(screen.getByText("Group B"));
 
-    expect(screen.getByRole("button", { name: "追加する" })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: "追加" })).not.toBeDisabled();
   });
 
   // テスト #4: 異常系 — POST API が 400 を返す → Sheet 内にエラーメッセージ
@@ -132,7 +132,7 @@ describe("AddSubgroupSheet", () => {
     }, WAIT_OPTIONS);
 
     await user.click(screen.getByText("Group B"));
-    await user.click(screen.getByRole("button", { name: "追加する" }));
+    await user.click(screen.getByRole("button", { name: "追加" }));
 
     await waitFor(() => {
       expect(screen.getByText(/エラーが発生しました/)).toBeInTheDocument();
@@ -160,7 +160,7 @@ describe("AddSubgroupSheet", () => {
     }, WAIT_OPTIONS);
 
     await user.click(screen.getByText("Group B"));
-    await user.click(screen.getByRole("button", { name: "追加する" }));
+    await user.click(screen.getByRole("button", { name: "追加" }));
 
     await waitFor(() => {
       expect(screen.getByText("すでに追加済みです")).toBeInTheDocument();

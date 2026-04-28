@@ -144,12 +144,10 @@ export function GroupDetailContent({ groupId, onMemberClick }: GroupDetailConten
               </Flex>
 
               <SubgroupList
+                groupId={groupId}
                 subgroups={subgroups}
                 error={error}
-                onDelete={
-                  // TODO: delete-subgroup PRD で実装
-                  (_subgroupId: number) => undefined
-                }
+                refetch={refetch}
               />
             </Box>
           </Grid>

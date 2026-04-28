@@ -222,6 +222,18 @@ export function AddSubgroupSheet({
         </TextField.Root>
       </Box>
 
+      <Box style={footerStyle}>
+        <Button
+          variant="soft"
+          size="2"
+          radius="full"
+          disabled={selectedGroupId === null || isSubmitting}
+          onClick={() => void handleSubmit()}
+        >
+          追加
+        </Button>
+      </Box>
+
       {/* グループ件数ラベル */}
       {total !== null && !fetchError && (
         <Text as="p" style={countLabelStyle}>
@@ -310,18 +322,6 @@ export function AddSubgroupSheet({
           </Box>
         )
       )}
-
-      <Box style={footerStyle}>
-        <Button
-          variant="soft"
-          size="2"
-          radius="full"
-          disabled={selectedGroupId === null || isSubmitting}
-          onClick={() => void handleSubmit()}
-        >
-          追加する
-        </Button>
-      </Box>
     </Box>
   );
 }

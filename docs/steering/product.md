@@ -31,6 +31,7 @@ inclusion: always
   `clearMemberListCache()` → `refetch()`（グループ詳細再取得）→ `onClose()`（`closeSheet()` +
   `refetch()`
   を再呼び出し）の順に呼び出してメンバー一覧とグループ詳細を更新する。409 競合エラーは「選択したユーザーはすでにメンバーです」と表示する
+- サブグループ追加（Sheet 形式、`POST /api/v1/groups/:id/subgroups` エンドポイント）。グループ詳細画面の「追加」ボタンから `AddSubgroupSheet` をシートで開き、`GET /api/v1/groups` で取得した全グループ一覧をラジオ選択（単一選択）して追加する。現在のグループ自身および既に直接の子グループになっているものは一覧から除外する。検索入力は 300ms デバウンス付き。追加成功時は `onSuccess()`（`refetch`）→ `onClose()`（`closeSheet()`）を呼び出してグループ詳細を更新する。409 競合エラーは「すでに追加済みです」と表示する
 - メンバー削除（`DELETE /api/v1/groups/:id/members`
   エンドポイント）。メンバー一覧のチェックボックスで複数選択し、「削除」ボタン（`onRefetch`
   prop が渡された場合のみ表示）から Radix UI `AlertDialog`

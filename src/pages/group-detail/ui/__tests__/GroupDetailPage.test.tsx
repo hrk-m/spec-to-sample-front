@@ -24,6 +24,7 @@ const mockGroup: GroupDetail = {
   name: "dev-team",
   description: "Development team",
   member_count: 5,
+  subgroups: [],
 };
 
 const mockMembersResponse: MembersResponse = {

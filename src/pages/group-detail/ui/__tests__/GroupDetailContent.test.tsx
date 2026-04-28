@@ -50,11 +50,16 @@ vi.mock("@/pages/group-detail/ui/AddMemberSheet", () => ({
   AddMemberSheet: vi.fn(() => null),
 }));
 
+vi.mock("@/pages/group-detail/ui/SubgroupList", () => ({
+  SubgroupList: vi.fn(() => null),
+}));
+
 const mockGroup: GroupDetail = {
   id: 1,
   name: "dev-team",
   description: "Development team",
   member_count: 3,
+  subgroups: [],
 };
 
 describe("GroupDetailContent", () => {
@@ -67,6 +72,7 @@ describe("GroupDetailContent", () => {
       error: null,
       isLoading: false,
       refetch: vi.fn(),
+      subgroups: [],
     });
 
     vi.mocked(fetchGroupMembers).mockResolvedValue({
@@ -118,6 +124,32 @@ describe("GroupDetailContent", () => {
     expect(mockOpenSheet).toHaveBeenCalledWith(expect.objectContaining({ id: "add-member-1" }));
   });
 
+  it("subgroups が非空のとき SubgroupList に正しい subgroups props が渡される", async () => {
+    const { useGroupDetail } = await import("@/pages/group-detail/model/group-detail-state");
+    const { SubgroupList } = await import("@/pages/group-detail/ui/SubgroupList");
+    vi.mocked(useGroupDetail).mockReturnValue({
+      group: {
+        ...mockGroup,
+        subgroups: [{ id: 2, name: "Sub Group", description: "desc", member_count: 1 }],
+      },
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+      subgroups: [{ id: 2, name: "Sub Group", description: "desc", member_count: 1 }],
+    });
+
+    render(<GroupDetailContent groupId={1} />);
+
+    await waitFor(() => {
+      expect(vi.mocked(SubgroupList)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          subgroups: [{ id: 2, name: "Sub Group", description: "desc", member_count: 1 }],
+        }),
+        undefined,
+      );
+    });
+  });
+
   it("追加成功後に MemberList と member_count が再取得される", async () => {
     const user = userEvent.setup();
 
@@ -139,6 +171,7 @@ describe("GroupDetailContent", () => {
       error: null,
       isLoading: false,
       refetch: mockRefetch,
+      subgroups: [],
     });
 
     render(<GroupDetailContent groupId={1} />);

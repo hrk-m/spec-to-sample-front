@@ -1,15 +1,17 @@
 import { useCallback, useState } from "react";
-import { Box, Button, Flex, Heading, Skeleton, Text } from "@radix-ui/themes";
+import { Box, Button, Flex, Grid, Heading, Skeleton, Text } from "@radix-ui/themes";
 import { useNavigate } from "react-router";
 
 import type { UserSummary } from "@/pages/group-detail/model/group-detail";
 import { useGroupDetail } from "@/pages/group-detail/model/group-detail-state";
 import { useSheetStack } from "@/shared/lib/sheet-stack";
 import { AddMemberSheet } from "./AddMemberSheet";
+import { AddSubgroupSheet } from "./AddSubgroupSheet";
 import { DeleteGroupDialog } from "./DeleteGroupDialog";
 import { EditGroupDialog } from "./EditGroupDialog";
 import { styles } from "./GroupDetailPage.styles";
 import { MemberList } from "./MemberList";
+import { SubgroupList } from "./SubgroupList";
 
 type GroupDetailContentProps = {
   groupId: number;
@@ -35,7 +37,7 @@ function GroupInfoSkeleton() {
 }
 
 export function GroupDetailContent({ groupId, onMemberClick }: GroupDetailContentProps) {
-  const { group, error, isLoading, refetch } = useGroupDetail(groupId);
+  const { group, error, isLoading, refetch, subgroups } = useGroupDetail(groupId);
   const navigate = useNavigate();
   const { openSheet, closeSheet } = useSheetStack();
   const shouldShowSkeleton = isLoading && !group;
@@ -57,6 +59,20 @@ export function GroupDetailContent({ groupId, onMemberClick }: GroupDetailConten
     });
   }, [groupId, openSheet, closeSheet, refetch]);
 
+  const handleOpenAddSubgroupSheet = useCallback(() => {
+    openSheet({
+      id: `add-subgroup-${groupId}`,
+      content: (
+        <AddSubgroupSheet
+          groupId={groupId}
+          onClose={closeSheet}
+          onSuccess={refetch}
+          subgroups={subgroups}
+        />
+      ),
+    });
+  }, [groupId, openSheet, closeSheet, refetch, subgroups]);
+
   return (
     <>
       {shouldShowSkeleton && <GroupInfoSkeleton />}
@@ -75,38 +91,68 @@ export function GroupDetailContent({ groupId, onMemberClick }: GroupDetailConten
             </Text>
           )}
 
-          <Flex justify="between" align="center" mb="3">
-            <Heading as="h1" style={{ fontSize: 40, fontWeight: 700, letterSpacing: -0.7 }}>
-              Group
-            </Heading>
-            <Flex gap="2">
-              <Button variant="soft" onClick={() => setEditDialogOpen(true)}>
-                Edit
-              </Button>
-              <Button variant="soft" color="red" onClick={() => setDeleteDialogOpen(true)}>
-                Delete
-              </Button>
-            </Flex>
-          </Flex>
+          <Grid columns="2" gap="4" mt="3">
+            {/* 左列: Group ヘッダー + Info カード */}
+            <Box>
+              <Flex align="end" gap="3" style={{ ...styles.sectionHeader, marginTop: 0 }}>
+                <Heading as="h1" style={{ fontSize: 40, fontWeight: 700, letterSpacing: -0.7 }}>
+                  Group
+                </Heading>
+                <Flex gap="2" pb="1">
+                  <Button variant="soft" onClick={() => setEditDialogOpen(true)}>
+                    Edit
+                  </Button>
+                  <Button variant="soft" color="red" onClick={() => setDeleteDialogOpen(true)}>
+                    Delete
+                  </Button>
+                </Flex>
+              </Flex>
+              <Box style={{ ...styles.sectionCard, marginTop: 0 }}>
+                <Box style={{ ...styles.infoRow, ...styles.infoRowBorder }}>
+                  <Text as="p" style={styles.infoLabel}>
+                    Name
+                  </Text>
+                  <Text as="p" style={styles.infoValue}>
+                    {group.name}
+                  </Text>
+                </Box>
+                <Box style={styles.infoRow}>
+                  <Text as="p" style={styles.infoLabel}>
+                    Description
+                  </Text>
+                  <Text as="p" style={styles.infoValue}>
+                    {group.description}
+                  </Text>
+                </Box>
+              </Box>
+            </Box>
 
-          <Box style={styles.sectionCard}>
-            <Box style={{ ...styles.infoRow, ...styles.infoRowBorder }}>
-              <Text as="p" style={styles.infoLabel}>
-                Name
-              </Text>
-              <Text as="p" style={styles.infoValue}>
-                {group.name}
-              </Text>
+            {/* 右列: Subgroups ヘッダー + SubgroupList */}
+            <Box>
+              <Flex align="end" gap="3" style={{ ...styles.sectionHeader, marginTop: 0 }}>
+                <Heading as="h1" style={{ fontSize: 40, fontWeight: 700, letterSpacing: -0.7 }}>
+                  Subgroups
+                </Heading>
+                <Flex gap="2" pb="1" align="center">
+                  <Text as="p" style={styles.sectionMeta}>
+                    {subgroups.length} total
+                  </Text>
+                  <Button variant="soft" onClick={handleOpenAddSubgroupSheet}>
+                    追加
+                  </Button>
+                </Flex>
+              </Flex>
+
+              <SubgroupList
+                subgroups={subgroups}
+                error={error}
+                onDelete={
+                  // TODO: delete-subgroup PRD で実装
+                  (_subgroupId: number) => undefined
+                }
+              />
             </Box>
-            <Box style={styles.infoRow}>
-              <Text as="p" style={styles.infoLabel}>
-                Description
-              </Text>
-              <Text as="p" style={styles.infoValue}>
-                {group.description}
-              </Text>
-            </Box>
-          </Box>
+          </Grid>
 
           <EditGroupDialog
             groupId={groupId}

@@ -12,6 +12,7 @@ describe("MemberDetailSheet", () => {
           uuid: "00000000-0000-0000-0000-000000000001",
           first_name: "Taro",
           last_name: "Yamada",
+          source_groups: [],
         }}
       />,
     );
@@ -27,6 +28,7 @@ describe("MemberDetailSheet", () => {
           uuid: "00000000-0000-0000-0000-000000000001",
           first_name: "Taro",
           last_name: "Yamada",
+          source_groups: [],
         }}
       />,
     );

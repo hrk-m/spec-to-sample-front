@@ -26,6 +26,26 @@ describe("SubgroupList", () => {
     expect(screen.getByText("Backend Team")).toBeInTheDocument();
   });
 
+  // テスト #12: 正常系 — メンバー数が表示される
+  it("各サブグループのメンバー数が表示される", () => {
+    render(<SubgroupList groupId={1} subgroups={sampleSubgroups} error={null} refetch={vi.fn()} />);
+
+    expect(screen.getByText("5 members")).toBeInTheDocument();
+    expect(screen.getByText("3 members")).toBeInTheDocument();
+  });
+
+  // テスト #13: 境界値 — member_count: 0 のとき "0 members" が表示される
+  it("member_count: 0 のとき '0 members' が表示される", () => {
+    const subgroupsWithZero: SubgroupSummary[] = [
+      { id: 10, name: "Empty Team", description: "", member_count: 0 },
+    ];
+    render(
+      <SubgroupList groupId={1} subgroups={subgroupsWithZero} error={null} refetch={vi.fn()} />,
+    );
+
+    expect(screen.getByText("0 members")).toBeInTheDocument();
+  });
+
   // テスト #11: 正常系 — 空リストの場合の表示
   it("空リストの場合に空状態メッセージが表示される", () => {
     render(<SubgroupList groupId={1} subgroups={[]} error={null} refetch={vi.fn()} />);

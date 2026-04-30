@@ -27,6 +27,7 @@ describe("useMemberList", () => {
         uuid: "00000000-0000-0000-0000-000000000001",
         first_name: "太郎",
         last_name: "山田",
+        source_groups: [{ group_id: 1, group_name: "Engineering" }],
       },
     ];
     vi.mocked(fetchGroupMembers).mockResolvedValueOnce({ members: mockMembers, total: 1 });
@@ -104,6 +105,59 @@ describe("useMemberList", () => {
     expect(result.current.error).toBeNull();
   });
 
+  describe("clearMemberListCache によるキャッシュ無効化と再フェッチ", () => {
+    it("clearMemberListCache 呼び出し後に useMemberList が再フェッチする", async () => {
+      const initialMembers = [
+        {
+          id: 1,
+          uuid: "00000000-0000-0000-0000-000000000001",
+          first_name: "太郎",
+          last_name: "山田",
+          source_groups: [{ group_id: 1, group_name: "Engineering" }],
+        },
+      ];
+      const refreshedMembers = [
+        {
+          id: 2,
+          uuid: "00000000-0000-0000-0000-000000000002",
+          first_name: "花子",
+          last_name: "鈴木",
+          source_groups: [{ group_id: 1, group_name: "Engineering" }],
+        },
+      ];
+
+      vi.mocked(fetchGroupMembers)
+        .mockResolvedValueOnce({ members: initialMembers, total: 1 })
+        .mockResolvedValueOnce({ members: refreshedMembers, total: 1 });
+
+      const { result } = renderHook(() => useMemberList(1));
+
+      // 初回フェッチ完了を待つ
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.members).toEqual(initialMembers);
+      expect(fetchGroupMembers).toHaveBeenCalledTimes(1);
+
+      // clearMemberListCache を呼び出す
+      act(() => {
+        clearMemberListCache();
+      });
+
+      // 再フェッチが実行されることを確認
+      await waitFor(() => {
+        expect(fetchGroupMembers).toHaveBeenCalledTimes(2);
+      });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.members).toEqual(refreshedMembers);
+    });
+  });
+
   describe("無限スクロール", () => {
     it("members は cachedMembers の全件を返す", async () => {
       const mockMembers = Array.from({ length: 55 }, (_, i) => ({
@@ -111,6 +165,7 @@ describe("useMemberList", () => {
         uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
         first_name: `名${i + 1}`,
         last_name: `姓${i + 1}`,
+        source_groups: [{ group_id: 1, group_name: "Engineering" }],
       }));
       vi.mocked(fetchGroupMembers).mockResolvedValueOnce({ members: mockMembers, total: 55 });
 
@@ -130,12 +185,14 @@ describe("useMemberList", () => {
         uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
         first_name: `名${i + 1}`,
         last_name: `姓${i + 1}`,
+        source_groups: [{ group_id: 1, group_name: "Engineering" }],
       }));
       const additionalMembers = Array.from({ length: 10 }, (_, i) => ({
         id: FETCH_LIMIT + i + 1,
         uuid: `00000000-0000-0000-0000-${String(FETCH_LIMIT + i + 1).padStart(12, "0")}`,
         first_name: `名${FETCH_LIMIT + i + 1}`,
         last_name: `姓${FETCH_LIMIT + i + 1}`,
+        source_groups: [{ group_id: 1, group_name: "Engineering" }],
       }));
 
       vi.mocked(fetchGroupMembers)
@@ -168,12 +225,14 @@ describe("useMemberList", () => {
         uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
         first_name: `名${i + 1}`,
         last_name: `姓${i + 1}`,
+        source_groups: [{ group_id: 1, group_name: "Engineering" }],
       }));
       const additionalMembers = Array.from({ length: 10 }, (_, i) => ({
         id: FETCH_LIMIT + i + 1,
         uuid: `00000000-0000-0000-0000-${String(FETCH_LIMIT + i + 1).padStart(12, "0")}`,
         first_name: `名${FETCH_LIMIT + i + 1}`,
         last_name: `姓${FETCH_LIMIT + i + 1}`,
+        source_groups: [{ group_id: 1, group_name: "Engineering" }],
       }));
 
       vi.mocked(fetchGroupMembers)
@@ -203,6 +262,7 @@ describe("useMemberList", () => {
         uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
         first_name: `名${i + 1}`,
         last_name: `姓${i + 1}`,
+        source_groups: [{ group_id: 1, group_name: "Engineering" }],
       }));
 
       vi.mocked(fetchGroupMembers).mockResolvedValueOnce({

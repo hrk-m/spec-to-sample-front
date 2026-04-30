@@ -41,12 +41,14 @@ const mockMembersResponse: MembersResponse = {
       uuid: "00000000-0000-0000-0000-000000000001",
       first_name: "Taro",
       last_name: "Yamada",
+      source_groups: [{ group_id: 1, group_name: "dev-team" }],
     },
     {
       id: 2,
       uuid: "00000000-0000-0000-0000-000000000002",
       first_name: "Hanako",
       last_name: "Sato",
+      source_groups: [{ group_id: 1, group_name: "dev-team" }],
     },
   ],
   total: 2,
@@ -119,6 +121,7 @@ describe("GroupDetailSheet", () => {
       uuid: "00000000-0000-0000-0000-000000000001",
       first_name: "Taro",
       last_name: "Yamada",
+      source_groups: [{ group_id: 1, group_name: "dev-team" }],
     });
   });
 

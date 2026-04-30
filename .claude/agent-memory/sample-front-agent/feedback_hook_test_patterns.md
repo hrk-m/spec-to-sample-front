@@ -40,4 +40,8 @@ const defaultHookReturn = {
 };
 ```
 
-**How to apply:** When writing tests for any new hook of this family, read the hook's return statement first to verify which fields are exposed before writing assertions against them. Always keep mock objects in sync with the hook's return type — TypeScript `TS2345` errors indicate a missing property.
+**UserSummary fixture rule:** `UserSummary` has a required `source_groups: Array<{ group_id: number; group_name: string }>` field. All test fixtures that construct `UserSummary` objects (in `useNonMemberList.test.ts`, `AddMemberSheet.test.tsx`, `MemberDetailSheet.test.tsx`, etc.) must include `source_groups: []` even when the test doesn't exercise that field. Missing it causes `TS2741` / `TS2322` errors.
+
+**toSorted over sort:** `MemberList.tsx` uses `Array#toSorted()` (not `sort()`) to avoid the oxlint `no-array-sort` warning. Any new code sorting `source_groups` or similar arrays should use `.toSorted(...)` or spread+sort pattern avoided.
+
+**How to apply:** When writing tests for any new hook of this family, read the hook's return statement first to verify which fields are exposed before writing assertions against them. Always keep mock objects in sync with the hook's return type — TypeScript `TS2345` errors indicate a missing property. When adding new required fields to shared types (like `UserSummary`), update all test fixtures in the same PR.

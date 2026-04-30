@@ -150,6 +150,85 @@ describe("GroupDetailContent", () => {
     });
   });
 
+  it("サブグループ追加成功後に clearMemberListCache と refetch が呼ばれる", async () => {
+    const user = userEvent.setup();
+
+    const { useSheetStack } = await import("@/shared/lib/sheet-stack");
+    const mockOpenSheet = vi.fn();
+    vi.mocked(useSheetStack).mockReturnValue({
+      openSheet: mockOpenSheet,
+      closeSheet: vi.fn(),
+      sheets: [],
+      removeSheet: vi.fn(),
+      closeAll: vi.fn(),
+    });
+
+    const mockRefetch = vi.fn();
+    const { useGroupDetail } = await import("@/pages/group-detail/model/group-detail-state");
+    vi.mocked(useGroupDetail).mockReturnValue({
+      group: mockGroup,
+      error: null,
+      isLoading: false,
+      refetch: mockRefetch,
+      subgroups: [],
+    });
+
+    const { clearMemberListCache } = await import("@/pages/group-detail/model/member-list");
+
+    render(<GroupDetailContent groupId={1} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "追加" })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "追加" }));
+
+    expect(mockOpenSheet).toHaveBeenCalledOnce();
+
+    const openSheetArg = mockOpenSheet.mock.calls[0]?.[0] as {
+      id: string;
+      content: { props: { onSuccess: () => void } };
+    };
+    expect(openSheetArg.id).toBe("add-subgroup-1");
+
+    // onSuccess コールバックを呼び出す
+    openSheetArg.content.props.onSuccess();
+
+    expect(clearMemberListCache).toHaveBeenCalledOnce();
+    expect(mockRefetch).toHaveBeenCalledOnce();
+  });
+
+  it("サブグループ削除成功後に clearMemberListCache と refetch が呼ばれる", async () => {
+    const { SubgroupList } = await import("@/pages/group-detail/ui/SubgroupList");
+    const mockRefetch = vi.fn();
+    const { useGroupDetail } = await import("@/pages/group-detail/model/group-detail-state");
+    vi.mocked(useGroupDetail).mockReturnValue({
+      group: mockGroup,
+      error: null,
+      isLoading: false,
+      refetch: mockRefetch,
+      subgroups: [],
+    });
+
+    const { clearMemberListCache } = await import("@/pages/group-detail/model/member-list");
+
+    render(<GroupDetailContent groupId={1} />);
+
+    await waitFor(() => {
+      expect(vi.mocked(SubgroupList)).toHaveBeenCalled();
+    });
+
+    // SubgroupList に渡された refetch を取得して呼び出す
+    const subgroupListCall = vi.mocked(SubgroupList).mock.calls[0]?.[0] as {
+      refetch: () => void;
+    };
+
+    subgroupListCall.refetch();
+
+    expect(clearMemberListCache).toHaveBeenCalledOnce();
+    expect(mockRefetch).toHaveBeenCalledOnce();
+  });
+
   it("追加成功後に MemberList と member_count が再取得される", async () => {
     const user = userEvent.setup();
 

@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { fetchGroupMembers } from "@/pages/group-detail/api/fetch-group-members";
-import type { UserSummary } from "@/pages/group-detail/model/group-detail";
+import { isDirectMember, type UserSummary } from "@/pages/group-detail/model/group-detail";
 
 export const FETCH_LIMIT = 100;
 
@@ -14,8 +14,11 @@ type MemberListCacheEntry = {
 
 const memberListCache = new Map<number, MemberListCacheEntry>();
 
+const cacheListeners = new Set<() => void>();
+
 export function clearMemberListCache() {
   memberListCache.clear();
+  cacheListeners.forEach((fn) => fn());
 }
 
 export function useMemberList(groupId: number) {
@@ -35,6 +38,15 @@ export function useMemberList(groupId: number) {
   const [lastBatchSize, setLastBatchSize] = useState(
     () => cachedEntry?.lastBatchSize ?? FETCH_LIMIT,
   );
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  useEffect(() => {
+    const notify = () => setRefreshKey((k) => k + 1);
+    cacheListeners.add(notify);
+    return () => {
+      cacheListeners.delete(notify);
+    };
+  }, []);
 
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -86,7 +98,7 @@ export function useMemberList(groupId: number) {
           setIsLoading(false);
         });
     },
-    [groupId],
+    [groupId, refreshKey],
   );
 
   const doFetchMore = useCallback(
@@ -199,6 +211,11 @@ export function useMemberList(groupId: number) {
   const visibleMembers = cachedMembers;
   const effectiveTotal = debouncedQuery ? cachedMembers.length : total;
 
+  const directMembers = useMemo(
+    () => visibleMembers.filter((m) => isDirectMember(m, groupId)),
+    [visibleMembers, groupId],
+  );
+
   useEffect(() => {
     if (!debouncedQuery) {
       memberListCache.set(groupId, {
@@ -216,6 +233,8 @@ export function useMemberList(groupId: number) {
 
   return {
     members: visibleMembers,
+    directMembers,
+    directMemberCount: directMembers.length,
     total: effectiveTotal,
     searchQuery,
     error,

@@ -13,7 +13,11 @@ import {
 import { FaMagnifyingGlass } from "react-icons/fa6";
 
 import { deleteGroupMembers } from "@/pages/group-detail/api/delete-group-members";
-import type { UserSummary } from "@/pages/group-detail/model/group-detail";
+import {
+  buildSourceLabel,
+  isDirectMember,
+  type UserSummary,
+} from "@/pages/group-detail/model/group-detail";
 import { clearMemberListCache, useMemberList } from "@/pages/group-detail/model/member-list";
 import { styles } from "./MemberList.styles";
 
@@ -21,6 +25,8 @@ const SKELETON_ROWS = 5;
 
 function MemberRow({
   member,
+  isDirect,
+  sourceLabel,
   isLast,
   isSelected,
   showCheckbox,
@@ -28,6 +34,8 @@ function MemberRow({
   onClick,
 }: {
   member: UserSummary;
+  isDirect: boolean;
+  sourceLabel: string;
   isLast: boolean;
   isSelected: boolean;
   showCheckbox: boolean;
@@ -38,27 +46,29 @@ function MemberRow({
     <tr data-testid="member-row" style={isLast ? styles.tableRowLast : styles.tableRow}>
       {showCheckbox && (
         <td style={styles.tableCellCheckbox}>
-          <Flex align="center">
-            <Checkbox
-              checked={isSelected}
-              onCheckedChange={() => onToggle(member.id)}
-              aria-label={`Select ${member.last_name} ${member.first_name}`}
-              data-testid="member-checkbox"
-            />
-          </Flex>
+          {isDirect ? (
+            <Flex align="center">
+              <Checkbox
+                checked={isSelected}
+                onCheckedChange={() => onToggle(member.id)}
+                aria-label={`Select ${member.last_name} ${member.first_name}`}
+                data-testid="member-checkbox"
+              />
+            </Flex>
+          ) : null}
         </td>
       )}
       <td style={styles.tableCellId}>{member.uuid}</td>
       <td
         style={{
           ...styles.tableCellName,
-          cursor: onClick ? "pointer" : undefined,
+          cursor: isDirect && onClick ? "pointer" : undefined,
         }}
-        onClick={onClick}
-        role={onClick ? "button" : undefined}
-        tabIndex={onClick ? 0 : undefined}
+        onClick={isDirect && onClick ? onClick : undefined}
+        role={isDirect && onClick ? "button" : undefined}
+        tabIndex={isDirect && onClick ? 0 : undefined}
         onKeyDown={
-          onClick
+          isDirect && onClick
             ? (e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
@@ -70,6 +80,7 @@ function MemberRow({
       >
         {member.last_name} {member.first_name}
       </td>
+      <td style={styles.tableCellSource}>{sourceLabel}</td>
     </tr>
   );
 }
@@ -95,6 +106,9 @@ function SkeletonMemberRow({ isLast, showCheckbox }: { isLast: boolean; showChec
       <td style={styles.skeletonCell}>
         <Skeleton style={styles.skeletonLine} />
       </td>
+      <td style={styles.skeletonCell}>
+        <Skeleton style={styles.skeletonLine} />
+      </td>
     </tr>
   );
 }
@@ -108,6 +122,8 @@ type MemberListProps = {
 export function MemberList({ groupId, onMemberClick, onRefetch }: MemberListProps) {
   const {
     members,
+    directMembers,
+    directMemberCount,
     searchQuery,
     error,
     isLoading,
@@ -126,8 +142,8 @@ export function MemberList({ groupId, onMemberClick, onRefetch }: MemberListProp
   const showCheckbox = onRefetch !== undefined;
 
   const headerCheckboxRef = useRef<HTMLInputElement>(null);
-  const isAllSelected = members.length > 0 && selectedIds.size === members.length;
-  const isSomeSelected = selectedIds.size > 0 && selectedIds.size < members.length;
+  const isAllSelected = directMemberCount > 0 && selectedIds.size === directMemberCount;
+  const isSomeSelected = selectedIds.size > 0 && selectedIds.size < directMemberCount;
 
   useEffect(() => {
     if (headerCheckboxRef.current) {
@@ -139,7 +155,7 @@ export function MemberList({ groupId, onMemberClick, onRefetch }: MemberListProp
     if (isAllSelected) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(members.map((m) => m.id)));
+      setSelectedIds(new Set(directMembers.map((m) => m.id)));
     }
   }
 
@@ -179,6 +195,8 @@ export function MemberList({ groupId, onMemberClick, onRefetch }: MemberListProp
       setIsDeleting(false);
     }
   }
+
+  const colSpan = showCheckbox ? 4 : 3;
 
   return (
     <Box>
@@ -232,7 +250,7 @@ export function MemberList({ groupId, onMemberClick, onRefetch }: MemberListProp
                       type="checkbox"
                       data-testid="header-checkbox"
                       checked={isAllSelected}
-                      disabled={members.length === 0}
+                      disabled={directMemberCount === 0}
                       onChange={handleSelectAll}
                       aria-label="全選択"
                       style={styles.headerCheckboxInput}
@@ -242,13 +260,14 @@ export function MemberList({ groupId, onMemberClick, onRefetch }: MemberListProp
               )}
               <th style={styles.tableHeaderCellUuid}>uuid</th>
               <th style={styles.tableHeaderCell}>姓名</th>
+              <th style={styles.tableHeaderCellSource}>所属元</th>
             </tr>
           </thead>
           <tbody>
             {isInitialLoading && (
               <>
                 <tr>
-                  <td colSpan={showCheckbox ? 3 : 2} style={{ padding: "12px 16px" }}>
+                  <td colSpan={colSpan} style={{ padding: "12px 16px" }}>
                     <Text as="span" className="visually-hidden">
                       loading members...
                     </Text>
@@ -269,6 +288,8 @@ export function MemberList({ groupId, onMemberClick, onRefetch }: MemberListProp
                 <MemberRow
                   key={member.id}
                   member={member}
+                  isDirect={isDirectMember(member, groupId)}
+                  sourceLabel={buildSourceLabel(member, groupId)}
                   isLast={index === members.length - 1}
                   isSelected={selectedIds.has(member.id)}
                   showCheckbox={showCheckbox}

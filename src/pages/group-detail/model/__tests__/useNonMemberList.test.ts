@@ -27,6 +27,7 @@ describe("useNonMemberList", () => {
         uuid: "00000000-0000-0000-0000-000000000001",
         first_name: "太郎",
         last_name: "山田",
+        source_groups: [],
       },
     ];
     vi.mocked(fetchNonMembers).mockResolvedValueOnce({ users: mockUsers, total: 1 });
@@ -99,6 +100,7 @@ describe("useNonMemberList", () => {
         uuid: "00000000-0000-0000-0000-000000000001",
         first_name: "太郎",
         last_name: "山田",
+        source_groups: [],
       },
     ];
     vi.mocked(fetchNonMembers).mockResolvedValueOnce({ users: mockUsers, total: 1 });
@@ -138,6 +140,7 @@ describe("useNonMemberList", () => {
         uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
         first_name: `名${i + 1}`,
         last_name: `姓${i + 1}`,
+        source_groups: [],
       }));
       vi.mocked(fetchNonMembers).mockResolvedValueOnce({ users: mockUsers, total: 55 });
 
@@ -157,12 +160,14 @@ describe("useNonMemberList", () => {
         uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
         first_name: `名${i + 1}`,
         last_name: `姓${i + 1}`,
+        source_groups: [],
       }));
       const additionalUsers = Array.from({ length: 10 }, (_, i) => ({
         id: FETCH_LIMIT + i + 1,
         uuid: `00000000-0000-0000-0000-${String(FETCH_LIMIT + i + 1).padStart(12, "0")}`,
         first_name: `名${FETCH_LIMIT + i + 1}`,
         last_name: `姓${FETCH_LIMIT + i + 1}`,
+        source_groups: [],
       }));
 
       vi.mocked(fetchNonMembers)
@@ -195,12 +200,14 @@ describe("useNonMemberList", () => {
         uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
         first_name: `名${i + 1}`,
         last_name: `姓${i + 1}`,
+        source_groups: [],
       }));
       const additionalUsers = Array.from({ length: 10 }, (_, i) => ({
         id: FETCH_LIMIT + i + 1,
         uuid: `00000000-0000-0000-0000-${String(FETCH_LIMIT + i + 1).padStart(12, "0")}`,
         first_name: `名${FETCH_LIMIT + i + 1}`,
         last_name: `姓${FETCH_LIMIT + i + 1}`,
+        source_groups: [],
       }));
 
       vi.mocked(fetchNonMembers)
@@ -230,6 +237,7 @@ describe("useNonMemberList", () => {
         uuid: `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`,
         first_name: `名${i + 1}`,
         last_name: `姓${i + 1}`,
+        source_groups: [],
       }));
 
       vi.mocked(fetchNonMembers).mockResolvedValueOnce({ users: initialUsers, total: FETCH_LIMIT });

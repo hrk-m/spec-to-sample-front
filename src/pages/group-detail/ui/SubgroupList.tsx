@@ -110,6 +110,9 @@ export function SubgroupList({ groupId, subgroups, error, refetch }: SubgroupLis
                     {subgroup.description}
                   </Text>
                 )}
+                <Text as="p" style={descStyle}>
+                  {subgroup.member_count} members
+                </Text>
               </Box>
               <Button
                 variant="soft"

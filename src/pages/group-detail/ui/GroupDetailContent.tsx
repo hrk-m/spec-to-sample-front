@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 
 import type { UserSummary } from "@/pages/group-detail/model/group-detail";
 import { useGroupDetail } from "@/pages/group-detail/model/group-detail-state";
+import { clearMemberListCache } from "@/pages/group-detail/model/member-list";
 import { useSheetStack } from "@/shared/lib/sheet-stack";
 import { AddMemberSheet } from "./AddMemberSheet";
 import { AddSubgroupSheet } from "./AddSubgroupSheet";
@@ -66,7 +67,10 @@ export function GroupDetailContent({ groupId, onMemberClick }: GroupDetailConten
         <AddSubgroupSheet
           groupId={groupId}
           onClose={closeSheet}
-          onSuccess={refetch}
+          onSuccess={() => {
+            clearMemberListCache();
+            refetch();
+          }}
           subgroups={subgroups}
         />
       ),
@@ -147,7 +151,10 @@ export function GroupDetailContent({ groupId, onMemberClick }: GroupDetailConten
                 groupId={groupId}
                 subgroups={subgroups}
                 error={error}
-                refetch={refetch}
+                refetch={() => {
+                  clearMemberListCache();
+                  refetch();
+                }}
               />
             </Box>
           </Grid>

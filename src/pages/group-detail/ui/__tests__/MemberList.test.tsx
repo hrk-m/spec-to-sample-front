@@ -42,7 +42,7 @@ const mockMembersResponse: MembersResponse = {
 
 describe("MemberList", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     clearMemberListCache();
     MockIntersectionObserver.reset();
   });
@@ -411,7 +411,7 @@ describe("MemberList", () => {
 
 describe("MemberList - 全選択ヘッダーチェックボックス", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     clearMemberListCache();
     MockIntersectionObserver.reset();
   });
@@ -558,7 +558,7 @@ describe("MemberList - メンバー削除", () => {
   let clearCacheSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     clearMemberListCache();
     MockIntersectionObserver.reset();
     clearCacheSpy = vi.spyOn(memberList, "clearMemberListCache");
@@ -613,6 +613,8 @@ describe("MemberList - メンバー削除", () => {
     const onRefetch = vi.fn();
     vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
     vi.mocked(deleteGroupMembersModule.deleteGroupMembers).mockResolvedValueOnce(undefined);
+    // clearMemberListCache() 後の再フェッチ用モック
+    vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
 
     render(<MemberList groupId={GROUP_ID} onRefetch={onRefetch} />);
 
@@ -732,7 +734,7 @@ describe("MemberList - 所属元列・子孫メンバー制御", () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     clearMemberListCache();
     MockIntersectionObserver.reset();
   });

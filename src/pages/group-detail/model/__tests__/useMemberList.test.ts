@@ -1,6 +1,6 @@
 import { MockIntersectionObserver } from "@/test/setup";
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fetchGroupMembers } from "@/pages/group-detail/api/fetch-group-members";
 import {
@@ -15,9 +15,13 @@ vi.mock("@/pages/group-detail/api/fetch-group-members", () => ({
 
 describe("useMemberList", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     clearMemberListCache();
     MockIntersectionObserver.reset();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("マウント時に API を呼び出し members と total をセットする", async () => {

@@ -31,13 +31,13 @@ inclusion: always
   はマウント時に `clearNonMemberListCache(groupId)`
   を呼び出して当該グループの非メンバーキャッシュをクリアし、常に最新の非メンバー一覧を取得する。検索（300ms デバウンス）・IntersectionObserver 無限スクロールを備える。ヘッダー行にネイティブ
   `<input type="checkbox">` による全選択チェックボックスを配置し、`useRef<HTMLInputElement>` +
-  `useEffect` で `indeterminate` 状態を管理する。追加成功時は `clearMemberListCache()` →
-  `refetch()`（グループ詳細再取得）→ `onClose()`（`closeSheet()` + `refetch()`
+  `useEffect` で `indeterminate` 状態を管理する。追加実行ボタンのラベルは「一括追加」。追加成功時は
+  `clearMemberListCache()` → `refetch()`（グループ詳細再取得）→ `onClose()`（`closeSheet()` +
+  `refetch()`
   を再呼び出し）の順に呼び出してメンバー一覧とグループ詳細を更新する。409 競合エラーは「選択したユーザーはすでにメンバーです」と表示する
 - サブグループ追加（Sheet 形式、`POST /api/v1/groups/:id/subgroups`
   エンドポイント）。グループ詳細画面の「追加」ボタンから `AddSubgroupSheet`
-  をシートで開き、`GET /api/v1/groups`
-  で取得した全グループ一覧をラジオ選択（単一選択）して追加する。現在のグループ自身および既に直接の子グループになっているものは一覧から除外する。検索入力は 300ms デバウンス付き。追加成功時は
+  をシートで開き、`GET /api/v1/groups`（`fetchGroupsForSheet`）で全グループ一覧をページネーションなしで取得しラジオ選択（単一選択）して追加する。現在のグループ自身および既に直接の子グループになっているものは一覧から除外する。検索入力は 300ms デバウンス付き（IntersectionObserver による無限スクロールは持たない）。追加実行ボタンのラベルは「追加」で、検索フィールドの直後・グループ一覧の前に配置する。追加成功時は
   `onSuccess()`（`refetch`）→
   `onClose()`（`closeSheet()`）を呼び出してグループ詳細を更新する。409 競合エラーは「すでに追加済みです」と表示する
 - サブグループ削除（`DELETE /api/v1/groups/:id/subgroups/:childId`

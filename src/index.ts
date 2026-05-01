@@ -1,6 +1,7 @@
 import { serve } from "bun";
 
 import index from "./index.html";
+import { handleApiProxy } from "./proxy";
 
 const DEFAULT_PORT = 3000;
 const DEFAULT_API_UPSTREAM = "http://localhost:8080";
@@ -16,17 +17,7 @@ const port = resolvePort(process.env.PORT);
 const server = serve({
   port,
   routes: {
-    "/api/*": (req) => {
-      const url = new URL(req.url);
-      const upstream = `${API_UPSTREAM}${url.pathname}${url.search}`;
-      const headers = new Headers(req.headers);
-      headers.delete("host");
-      return fetch(upstream, {
-        method: req.method,
-        headers,
-        body: req.body,
-      });
-    },
+    "/api/*": (req) => handleApiProxy(req, API_UPSTREAM),
     "/*": index,
   },
 

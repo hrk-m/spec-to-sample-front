@@ -111,22 +111,19 @@ export function GroupNavigationLayout() {
     return <UsersPage />;
   }
 
-  if (!groupDetailMatch) {
-    return <HomePage onGroupClick={handleGroupClick} />;
-  }
-
-  const groupId = Number(groupDetailMatch.params.id);
-
-  if (!isSheetPresentation) {
+  if (groupDetailMatch && !isSheetPresentation) {
     return <GroupDetailPage />;
   }
 
+  // home と sheet の両ケースで HomePage を同じ位置に保ちリマウントを防ぐ
   return (
     <>
-      <div inert style={{ display: "contents" }}>
+      <div inert={isSheetPresentation || undefined} style={{ display: "contents" }}>
         <HomePage onGroupClick={handleGroupClick} />
       </div>
-      <GroupDetailRouteSheet groupId={groupId} />
+      {isSheetPresentation && groupDetailMatch && (
+        <GroupDetailRouteSheet groupId={Number(groupDetailMatch.params.id)} />
+      )}
     </>
   );
 }

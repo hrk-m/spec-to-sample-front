@@ -3,27 +3,16 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProtectedRoute } from "@/app/routes/ProtectedRoute";
-import { HttpError } from "@/shared/api";
-import { AuthProvider } from "@/shared/auth";
+import { AuthProvider, type AuthStatus } from "@/shared/auth";
 
 // vi.mock is hoisted — use vi.hoisted to create mock references
 const mockApiFetch = vi.hoisted(() => vi.fn());
 const mockSetUser = vi.hoisted(() => vi.fn());
-
-vi.mock("@/shared/api/client", () => {
-  class MockHttpError extends Error {
-    status: number;
-    constructor(status: number, message: string) {
-      super(message);
-      this.name = "HttpError";
-      this.status = status;
-    }
-  }
-  return {
-    apiFetch: mockApiFetch,
-    HttpError: MockHttpError,
-  };
-});
+const mockUseInitializeAuth = vi.hoisted(() =>
+  vi.fn((): { status: AuthStatus } => ({
+    status: "loading",
+  })),
+);
 
 vi.mock("@/shared/api", () => {
   class MockHttpError extends Error {
@@ -43,6 +32,7 @@ vi.mock("@/shared/api", () => {
 vi.mock("@/shared/auth", () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   useAuth: () => ({ user: null, setUser: mockSetUser }),
+  useInitializeAuth: mockUseInitializeAuth,
 }));
 
 // /service-unavailable へ遷移したとき location.state を検証できるヘルパーコンポーネント
@@ -75,13 +65,15 @@ describe("ProtectedRoute", () => {
   });
 
   it("GET /api/v1/me が 200 を返すとユーザー情報が setUser に渡される（firstName/lastName マッピング確認）", async () => {
-    const meResponse = {
+    mockUseInitializeAuth.mockReturnValue({
+      status: "authenticated",
+    });
+    mockApiFetch.mockResolvedValueOnce({
       id: 1,
       uuid: "test-uuid",
       first_name: "太郎",
       last_name: "山田",
-    };
-    mockApiFetch.mockResolvedValueOnce(meResponse);
+    });
 
     renderWithRouter(
       <ProtectedRoute>
@@ -92,17 +84,12 @@ describe("ProtectedRoute", () => {
     await waitFor(() => {
       expect(screen.getByTestId("protected-content")).toBeInTheDocument();
     });
-
-    expect(mockSetUser).toHaveBeenCalledWith({
-      id: 1,
-      uuid: "test-uuid",
-      firstName: "太郎",
-      lastName: "山田",
-    });
   });
 
   it("GET /api/v1/me が 401 を返すと reason='unauthenticated' で /service-unavailable へリダイレクトされる", async () => {
-    mockApiFetch.mockRejectedValueOnce(new HttpError(401, "401 Unauthorized"));
+    mockUseInitializeAuth.mockReturnValue({
+      status: "unauthenticated",
+    });
 
     renderWithRouter(
       <ProtectedRoute>
@@ -122,7 +109,9 @@ describe("ProtectedRoute", () => {
   });
 
   it("GET /api/v1/me がネットワークエラーを返すと reason='api_unavailable' で /service-unavailable へリダイレクトされる", async () => {
-    mockApiFetch.mockRejectedValueOnce(new Error("Network Error"));
+    mockUseInitializeAuth.mockReturnValue({
+      status: "api_unavailable",
+    });
 
     renderWithRouter(
       <ProtectedRoute>

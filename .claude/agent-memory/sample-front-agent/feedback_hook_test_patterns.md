@@ -44,4 +44,8 @@ const defaultHookReturn = {
 
 **toSorted over sort:** `MemberList.tsx` uses `Array#toSorted()` (not `sort()`) to avoid the oxlint `no-array-sort` warning. Any new code sorting `source_groups` or similar arrays should use `.toSorted(...)` or spread+sort pattern avoided.
 
+**renderHook initialProps type issue:** When using `renderHook` with `initialProps` containing an optional field set to `undefined`, TypeScript infers the type as `{ field: undefined }` which conflicts with `rerender({ field: someValue })`. Fix by casting: `initialProps: { excludeGroupIds: undefined as number[] | undefined }`.
+
+**Unstable subgroups reference pattern in GroupDetailContent:** `useGroupDetail` returns `subgroups` as `group?.subgroups ?? []` — the `[]` fallback creates a new array reference on every render. `useEffect([subgroups])` would fire on every render causing infinite loops. Solution: derive a stable key `const subgroupIdsKey = subgroups.map(sg => sg.id).join(",")` and use it as the dependency. Store the latest subgroups in a `ref` (`subgroupsRef.current = subgroups`) to avoid stale closures inside the effect body. Also use an `isMountedRef` to skip the first execution of debounced `clearMemberListCache()` effects to prevent unnecessary refetches on mount.
+
 **How to apply:** When writing tests for any new hook of this family, read the hook's return statement first to verify which fields are exposed before writing assertions against them. Always keep mock objects in sync with the hook's return type — TypeScript `TS2345` errors indicate a missing property. When adding new required fields to shared types (like `UserSummary`), update all test fixtures in the same PR.

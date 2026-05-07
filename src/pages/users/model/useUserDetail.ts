@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
+import type { User } from "@/entities/user";
 
-import { fetchUser } from "@/pages/user-detail/api/fetch-user";
-import type { UserDetail } from "@/pages/user-detail/model/user-detail";
+import { fetchUser } from "@/pages/users/api/fetch-user";
 
 type UserDetailState = {
-  user: UserDetail | null;
+  user: User | null;
   loading: boolean;
   error: string | null;
   notFound: boolean;
 };
 
 export function useUserDetail(id: string | undefined): UserDetailState {
-  const [user, setUser] = useState<UserDetail | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);

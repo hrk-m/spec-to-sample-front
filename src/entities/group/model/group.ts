@@ -1,0 +1,11 @@
+export type Group = {
+  id: number;
+  name: string;
+  description: string;
+  member_count: number;
+};
+
+export type GroupsResponse = {
+  groups: Group[];
+  total: number;
+};

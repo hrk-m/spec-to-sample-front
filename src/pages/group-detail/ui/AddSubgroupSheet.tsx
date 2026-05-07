@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
+import type { SubgroupSummary } from "@/entities/group";
 import { Box, Button, Flex, Skeleton, Text, TextField } from "@radix-ui/themes";
 import { FaMagnifyingGlass } from "react-icons/fa6";
 
-import { addSubgroup } from "@/pages/group-detail/api/add-subgroup";
-import { fetchGroupsForSheet, type GroupSummary } from "@/pages/group-detail/api/fetch-groups";
-import type { SubgroupSummary } from "@/pages/group-detail/model/group-detail";
-import { appColors } from "@/shared/ui";
+import { useAddSubgroup } from "@/pages/group-detail/model/useAddSubgroup";
+import { useSearchableGroupList } from "@/pages/group-detail/model/useSearchableGroupList";
+import { appColors } from "@/shared/config";
 
 const colors = {
   separator: appColors.separator,
@@ -122,90 +122,43 @@ const emptyStyle = {
 } as const;
 
 const SKELETON_ROWS = 4;
-const DEBOUNCE_MS = 300;
 
 type AddSubgroupSheetProps = {
   groupId: number;
   onClose: () => void;
-  onSuccess: () => void;
   subgroups: SubgroupSummary[];
 };
 
-export function AddSubgroupSheet({
-  groupId,
-  onClose,
-  onSuccess,
-  subgroups,
-}: AddSubgroupSheetProps) {
-  const [groups, setGroups] = useState<GroupSummary[]>([]);
-  const [total, setTotal] = useState<number | null>(null);
-  const [isFetchingGroups, setIsFetchingGroups] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+export function AddSubgroupSheet({ groupId, onClose, subgroups }: AddSubgroupSheetProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const isActiveRef = useRef(true);
+  const {
+    groups,
+    total,
+    isLoading: isFetchingGroups,
+    error: fetchError,
+  } = useSearchableGroupList(searchQuery);
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
+  const { isLoading: isSubmitting, error: submitError, submit } = useAddSubgroup(groupId);
+  const [addedIds, setAddedIds] = useState<Set<number>>(() => new Set());
 
-  // 検索クエリが変わるたびにデバウンス付きでフェッチ
-  useEffect(() => {
-    isActiveRef.current = true;
-    setIsFetchingGroups(true);
-    setFetchError(null);
-
-    const timerId = setTimeout(() => {
-      fetchGroupsForSheet(searchQuery)
-        .then((data) => {
-          if (!isActiveRef.current) return;
-          setGroups(data.groups);
-          setTotal(data.total);
-        })
-        .catch((err: unknown) => {
-          if (!isActiveRef.current) return;
-          const msg = err instanceof Error ? err.message : String(err);
-          setFetchError(`Error ${msg}`);
-        })
-        .finally(() => {
-          if (!isActiveRef.current) return;
-          setIsFetchingGroups(false);
-        });
-    }, DEBOUNCE_MS);
-
-    return () => {
-      clearTimeout(timerId);
-      isActiveRef.current = false;
-    };
-  }, [searchQuery]);
-
-  // 既に直接の子グループになっているものを除外
   const existingChildIds = new Set(subgroups.map((s) => s.id));
-  const availableGroups = groups.filter((g) => g.id !== groupId && !existingChildIds.has(g.id));
+  const availableGroups = groups.filter(
+    (g) => g.id !== groupId && !existingChildIds.has(g.id) && !addedIds.has(g.id),
+  );
 
   const handleSubmit = useCallback(async () => {
     if (selectedGroupId === null) return;
 
-    setIsSubmitting(true);
-    setSubmitError(null);
-
-    try {
-      await addSubgroup({ groupId, childGroupId: selectedGroupId });
-      onSuccess();
+    const ok = await submit(selectedGroupId);
+    if (ok) {
+      setAddedIds((prev) => new Set([...prev, selectedGroupId]));
+      setSelectedGroupId(null);
       onClose();
-    } catch (err: unknown) {
-      const message = String(err);
-      if (message.includes("409")) {
-        setSubmitError("すでに追加済みです");
-      } else {
-        setSubmitError("エラーが発生しました。しばらくしてから再試行してください。");
-      }
-    } finally {
-      setIsSubmitting(false);
     }
-  }, [groupId, selectedGroupId, onSuccess, onClose]);
+  }, [selectedGroupId, submit, onClose]);
 
   return (
     <Box style={containerStyle}>
-      {/* 検索フィールド */}
       <Box style={searchSectionStyle}>
         <TextField.Root
           size="3"
@@ -234,21 +187,18 @@ export function AddSubgroupSheet({
         </Button>
       </Box>
 
-      {/* グループ件数ラベル */}
       {total !== null && !fetchError && (
         <Text as="p" style={countLabelStyle}>
-          {total} groups
+          {Math.max(0, total - addedIds.size)} groups
         </Text>
       )}
 
-      {/* エラー表示（GET） */}
       {fetchError && (
         <Text as="p" style={errorStyle}>
           {fetchError}
         </Text>
       )}
 
-      {/* エラー表示（POST） */}
       {submitError && (
         <Text as="p" style={errorStyle}>
           {submitError}

@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { validateGroupName } from "@/entities/group";
 
 import { updateGroup } from "@/pages/group-detail/api/update-group";
-import type { UpdateGroupRequest } from "@/pages/group-detail/model/group-update";
+import type { UpdateGroupRequest } from "./group-update";
 
 type UseUpdateGroupReturn = {
   isLoading: boolean;
@@ -14,15 +15,9 @@ export function useUpdateGroup(groupId: number, onSuccess?: () => void): UseUpda
   const [error, setError] = useState<string | null>(null);
 
   async function submit(req: UpdateGroupRequest): Promise<void> {
-    const trimmedName = req.name.trim();
-
-    if (trimmedName.length === 0) {
-      setError("Name is required");
-      return;
-    }
-
-    if (trimmedName.length > 100) {
-      setError("Name must be 100 characters or less");
+    const validationError = validateGroupName(req.name);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -30,7 +25,7 @@ export function useUpdateGroup(groupId: number, onSuccess?: () => void): UseUpda
     setError(null);
 
     try {
-      await updateGroup(groupId, { name: trimmedName, description: req.description });
+      await updateGroup(groupId, { name: req.name.trim(), description: req.description });
       onSuccess?.();
     } catch (err: unknown) {
       setError(String(err));

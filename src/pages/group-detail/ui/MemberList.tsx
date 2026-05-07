@@ -1,4 +1,6 @@
+import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { isDirectMember, type GroupMember } from "@/entities/group";
 import {
   AlertDialog,
   Box,
@@ -12,13 +14,9 @@ import {
 } from "@radix-ui/themes";
 import { FaMagnifyingGlass } from "react-icons/fa6";
 
-import { deleteGroupMembers } from "@/pages/group-detail/api/delete-group-members";
-import {
-  buildSourceLabel,
-  isDirectMember,
-  type UserSummary,
-} from "@/pages/group-detail/model/group-detail";
-import { clearMemberListCache, useMemberList } from "@/pages/group-detail/model/member-list";
+import { buildSourceLabel } from "@/pages/group-detail/model/source-label";
+import { useDeleteGroupMembers } from "@/pages/group-detail/model/useDeleteGroupMembers";
+import { useMemberList } from "@/pages/group-detail/model/useMemberList";
 import { styles } from "./MemberList.styles";
 
 const SKELETON_ROWS = 5;
@@ -33,7 +31,7 @@ function MemberRow({
   onToggle,
   onClick,
 }: {
-  member: UserSummary;
+  member: GroupMember;
   isDirect: boolean;
   sourceLabel: string;
   isLast: boolean;
@@ -115,15 +113,35 @@ function SkeletonMemberRow({ isLast, showCheckbox }: { isLast: boolean; showChec
 
 type MemberListProps = {
   groupId: number;
-  onMemberClick?: (member: UserSummary) => void;
+  onMemberClick?: (member: GroupMember) => void;
   onRefetch?: () => void;
+  onTotalChange?: (total: number) => void;
+  onDuplicateCountChange?: (count: number) => void;
+  excludeDirectMembers?: boolean;
+  onExcludeDirectMembersChange?: (value: boolean) => void;
+  excludeGroupIds?: number[];
+  scrollContainerStyle?: React.CSSProperties;
+  enabled?: boolean;
 };
 
-export function MemberList({ groupId, onMemberClick, onRefetch }: MemberListProps) {
+export function MemberList({
+  groupId,
+  onMemberClick,
+  onRefetch,
+  onTotalChange,
+  onDuplicateCountChange,
+  excludeDirectMembers = false,
+  onExcludeDirectMembersChange,
+  excludeGroupIds,
+  scrollContainerStyle,
+  enabled,
+}: MemberListProps) {
   const {
     members,
     directMembers,
     directMemberCount,
+    total,
+    duplicateCount,
     searchQuery,
     error,
     isLoading,
@@ -131,12 +149,23 @@ export function MemberList({ groupId, onMemberClick, onRefetch }: MemberListProp
     fetchMoreError,
     sentinelRef,
     setSearchQuery,
-  } = useMemberList(groupId);
+  } = useMemberList(groupId, excludeGroupIds, { enabled });
+
+  useEffect(() => {
+    onTotalChange?.(total);
+  }, [total, onTotalChange]);
+
+  useEffect(() => {
+    onDuplicateCountChange?.(duplicateCount);
+  }, [duplicateCount, onDuplicateCountChange]);
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const {
+    isLoading: isDeleting,
+    error: deleteError,
+    submit: submitDelete,
+  } = useDeleteGroupMembers(groupId);
 
   const isInitialLoading = isLoading && members.length === 0;
   const showCheckbox = onRefetch !== undefined;
@@ -172,7 +201,6 @@ export function MemberList({ groupId, onMemberClick, onRefetch }: MemberListProp
   }
 
   function handleDeleteClick() {
-    setDeleteError(null);
     setDeleteDialogOpen(true);
   }
 
@@ -181,25 +209,27 @@ export function MemberList({ groupId, onMemberClick, onRefetch }: MemberListProp
   }
 
   async function handleConfirmDelete() {
-    setIsDeleting(true);
-    setDeleteError(null);
-    try {
-      await deleteGroupMembers({ groupId, userIds: [...selectedIds] });
+    const ok = await submitDelete([...selectedIds]);
+    if (ok) {
       setSelectedIds(new Set());
       setDeleteDialogOpen(false);
-      clearMemberListCache();
       onRefetch?.();
-    } catch (err) {
-      setDeleteError(String(err));
-    } finally {
-      setIsDeleting(false);
     }
   }
 
   const colSpan = showCheckbox ? 4 : 3;
 
   return (
-    <Box>
+    <Box
+      style={{
+        padding: "0 20px",
+        display: "flex",
+        flexDirection: "column",
+        flex: 1,
+        minHeight: 0,
+        overflow: "hidden",
+      }}
+    >
       <Box style={styles.searchSection}>
         <TextField.Root
           size="3"
@@ -216,118 +246,136 @@ export function MemberList({ groupId, onMemberClick, onRefetch }: MemberListProp
         </TextField.Root>
       </Box>
 
-      {showCheckbox && (
-        <Flex justify="end" style={{ marginTop: 12 }}>
-          <Button
-            type="button"
-            size="2"
-            radius="full"
-            variant="soft"
-            color="red"
-            disabled={selectedIds.size === 0}
-            onClick={handleDeleteClick}
-          >
-            削除
-          </Button>
+      {(showCheckbox || onExcludeDirectMembersChange !== undefined) && (
+        <Flex justify="between" align="center" style={{ marginTop: 12, marginBottom: 12 }}>
+          {onExcludeDirectMembersChange !== undefined ? (
+            <Flex align="center" gap="2">
+              <Checkbox
+                checked={excludeDirectMembers}
+                onCheckedChange={(checked) => onExcludeDirectMembersChange(Boolean(checked))}
+                id="exclude-direct-members"
+                aria-label="自グループを除外"
+              />
+              <label htmlFor="exclude-direct-members" style={{ fontSize: 13, cursor: "pointer" }}>
+                自グループを除外
+              </label>
+            </Flex>
+          ) : (
+            <span />
+          )}
+          {showCheckbox && (
+            <Button
+              type="button"
+              size="2"
+              radius="full"
+              variant="soft"
+              color="red"
+              disabled={selectedIds.size === 0}
+              onClick={handleDeleteClick}
+            >
+              削除
+            </Button>
+          )}
         </Flex>
       )}
 
-      {error && (
-        <Text as="p" style={styles.errorText}>
-          {error}
-        </Text>
-      )}
+      <Box style={scrollContainerStyle}>
+        {error && (
+          <Text as="p" style={styles.errorText}>
+            {error}
+          </Text>
+        )}
 
-      {!error && (
-        <table style={styles.tableRoot}>
-          <thead style={styles.tableHeader}>
-            <tr>
-              {showCheckbox && (
-                <th style={styles.tableHeaderCellCheckbox} aria-label="選択">
-                  <Flex align="center">
-                    <input
-                      ref={headerCheckboxRef}
-                      type="checkbox"
-                      data-testid="header-checkbox"
-                      checked={isAllSelected}
-                      disabled={directMemberCount === 0}
-                      onChange={handleSelectAll}
-                      aria-label="全選択"
-                      style={styles.headerCheckboxInput}
-                    />
-                  </Flex>
-                </th>
-              )}
-              <th style={styles.tableHeaderCellUuid}>uuid</th>
-              <th style={styles.tableHeaderCell}>姓名</th>
-              <th style={styles.tableHeaderCellSource}>所属元</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isInitialLoading && (
-              <>
+        {!error && (
+          <Box style={styles.tableWrapper}>
+            <table style={styles.tableRoot}>
+              <thead style={styles.tableHeader}>
                 <tr>
-                  <td colSpan={colSpan} style={{ padding: "12px 16px" }}>
-                    <Text as="span" className="visually-hidden">
-                      loading members...
-                    </Text>
-                  </td>
+                  {showCheckbox && (
+                    <th style={styles.tableHeaderCellCheckbox} aria-label="選択">
+                      <Flex align="center">
+                        <input
+                          ref={headerCheckboxRef}
+                          type="checkbox"
+                          data-testid="header-checkbox"
+                          checked={isAllSelected}
+                          disabled={directMemberCount === 0}
+                          onChange={handleSelectAll}
+                          aria-label="全選択"
+                          style={styles.headerCheckboxInput}
+                        />
+                      </Flex>
+                    </th>
+                  )}
+                  <th style={styles.tableHeaderCellUuid}>uuid</th>
+                  <th style={styles.tableHeaderCell}>姓名</th>
+                  <th style={styles.tableHeaderCellSource}>所属元</th>
                 </tr>
-                {Array.from({ length: SKELETON_ROWS }, (_, i) => (
-                  <SkeletonMemberRow
-                    key={i}
-                    isLast={i === SKELETON_ROWS - 1}
-                    showCheckbox={showCheckbox}
-                  />
-                ))}
-              </>
-            )}
+              </thead>
+              <tbody>
+                {isInitialLoading && (
+                  <>
+                    <tr>
+                      <td colSpan={colSpan} style={{ padding: "12px 16px" }}>
+                        <Text as="span" className="visually-hidden">
+                          loading members...
+                        </Text>
+                      </td>
+                    </tr>
+                    {Array.from({ length: SKELETON_ROWS }, (_, i) => (
+                      <SkeletonMemberRow
+                        key={i}
+                        isLast={i === SKELETON_ROWS - 1}
+                        showCheckbox={showCheckbox}
+                      />
+                    ))}
+                  </>
+                )}
 
-            {!isInitialLoading &&
-              members.map((member, index) => (
-                <MemberRow
-                  key={member.id}
-                  member={member}
-                  isDirect={isDirectMember(member, groupId)}
-                  sourceLabel={buildSourceLabel(member, groupId)}
-                  isLast={index === members.length - 1}
-                  isSelected={selectedIds.has(member.id)}
-                  showCheckbox={showCheckbox}
-                  onToggle={handleToggle}
-                  onClick={onMemberClick ? () => onMemberClick(member) : undefined}
-                />
-              ))}
-          </tbody>
-        </table>
-      )}
+                {!isInitialLoading &&
+                  members.map((member, index) => (
+                    <MemberRow
+                      key={member.id}
+                      member={member}
+                      isDirect={isDirectMember(member, groupId)}
+                      sourceLabel={buildSourceLabel(member, groupId)}
+                      isLast={index === members.length - 1}
+                      isSelected={selectedIds.has(member.id)}
+                      showCheckbox={showCheckbox}
+                      onToggle={handleToggle}
+                      onClick={onMemberClick ? () => onMemberClick(member) : undefined}
+                    />
+                  ))}
+              </tbody>
+            </table>
+          </Box>
+        )}
 
-      {!isInitialLoading && !error && members.length === 0 && (
-        <Text as="p" style={styles.emptyText}>
-          No members found.
-        </Text>
-      )}
+        {!isInitialLoading && !error && members.length === 0 && (
+          <Text as="p" style={styles.emptyText}>
+            No members found.
+          </Text>
+        )}
 
-      {/* Inline error for additional fetch failures */}
-      {fetchMoreError && (
-        <Text as="p" style={styles.errorText}>
-          {fetchMoreError}
-        </Text>
-      )}
+        {fetchMoreError && (
+          <Text as="p" style={styles.errorText}>
+            {fetchMoreError}
+          </Text>
+        )}
 
-      {/* Spinner for additional fetch */}
-      {isFetchingMore && (
-        <Flex justify="center" style={{ marginTop: 12 }}>
-          <Spinner aria-label="Loading more members" />
-        </Flex>
-      )}
+        {isFetchingMore && (
+          <Flex justify="center" style={{ marginTop: 12 }}>
+            <Spinner aria-label="Loading more members" />
+          </Flex>
+        )}
 
-      {/* Sentinel element for IntersectionObserver */}
-      <div
-        ref={sentinelRef}
-        style={{ height: 1 }}
-        aria-hidden="true"
-        data-testid="member-sentinel"
-      />
+        <div
+          ref={sentinelRef}
+          style={{ height: 1 }}
+          aria-hidden="true"
+          data-testid="member-sentinel"
+        />
+      </Box>
 
       <AlertDialog.Root open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialog.Content maxWidth="480px">

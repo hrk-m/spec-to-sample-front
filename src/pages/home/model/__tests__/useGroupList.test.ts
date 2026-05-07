@@ -3,7 +3,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fetchGroups } from "@/pages/home/api/fetch-groups";
-import { clearGroupListCache, FETCH_LIMIT, useGroupList } from "@/pages/home/model/group-list";
+import { FETCH_LIMIT, useGroupList } from "@/pages/home/model/group-list";
 
 vi.mock("@/pages/home/api/fetch-groups", () => ({
   fetchGroups: vi.fn(),
@@ -12,7 +12,6 @@ vi.mock("@/pages/home/api/fetch-groups", () => ({
 describe("useGroupList", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    clearGroupListCache();
     MockIntersectionObserver.reset();
   });
 
@@ -95,6 +94,40 @@ describe("useGroupList", () => {
     expect(result.current.isLoading).toBe(true);
     expect(result.current.groups).toEqual([]);
     expect(result.current.error).toBeNull();
+  });
+
+  describe("refetch による再フェッチ", () => {
+    it("refetch 呼び出し後に再フェッチが走る", async () => {
+      vi.mocked(fetchGroups)
+        .mockResolvedValueOnce({
+          groups: [{ id: 1, name: "Group A", description: "Desc A", member_count: 1 }],
+          total: 1,
+        })
+        .mockResolvedValueOnce({
+          groups: [{ id: 1, name: "Group A Updated", description: "Desc A", member_count: 2 }],
+          total: 1,
+        });
+
+      const { result } = renderHook(() => useGroupList());
+
+      await waitFor(() => {
+        expect(result.current.groups).toHaveLength(1);
+      });
+
+      expect(vi.mocked(fetchGroups)).toHaveBeenCalledTimes(1);
+
+      act(() => {
+        result.current.refetch();
+      });
+
+      await waitFor(() => {
+        expect(vi.mocked(fetchGroups)).toHaveBeenCalledTimes(2);
+      });
+
+      await waitFor(() => {
+        expect(result.current.groups[0]?.name).toBe("Group A Updated");
+      });
+    });
   });
 
   describe("無限スクロール", () => {

@@ -3,11 +3,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fetchNonMembers } from "@/pages/group-detail/api/fetch-non-members";
-import {
-  clearNonMemberListCache,
-  FETCH_LIMIT,
-  useNonMemberList,
-} from "@/pages/group-detail/model/useNonMemberList";
+import { FETCH_LIMIT, useNonMemberList } from "@/pages/group-detail/model/useNonMemberList";
 
 vi.mock("@/pages/group-detail/api/fetch-non-members", () => ({
   fetchNonMembers: vi.fn(),
@@ -16,7 +12,6 @@ vi.mock("@/pages/group-detail/api/fetch-non-members", () => ({
 describe("useNonMemberList", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    clearNonMemberListCache();
     MockIntersectionObserver.reset();
   });
 
@@ -93,8 +88,8 @@ describe("useNonMemberList", () => {
     vi.useRealTimers();
   });
 
-  it("同一 groupId で 2 回マウントしたとき 2 回目はキャッシュから読みロード不要になる", async () => {
-    const mockUsers = [
+  it("refetch 呼び出し後に再フェッチが走る", async () => {
+    const initialUsers = [
       {
         id: 1,
         uuid: "00000000-0000-0000-0000-000000000001",
@@ -103,24 +98,39 @@ describe("useNonMemberList", () => {
         source_groups: [],
       },
     ];
-    vi.mocked(fetchNonMembers).mockResolvedValueOnce({ users: mockUsers, total: 1 });
+    const refreshedUsers = [
+      {
+        id: 2,
+        uuid: "00000000-0000-0000-0000-000000000002",
+        first_name: "花子",
+        last_name: "鈴木",
+        source_groups: [],
+      },
+    ];
+    vi.mocked(fetchNonMembers)
+      .mockResolvedValueOnce({ users: initialUsers, total: 1 })
+      .mockResolvedValueOnce({ users: refreshedUsers, total: 1 });
 
-    // 1 回目マウント → API が呼ばれる
-    const { unmount } = renderHook(() => useNonMemberList(1));
-
-    await waitFor(() => {
-      expect(vi.mocked(fetchNonMembers)).toHaveBeenCalledTimes(1);
-    });
-
-    unmount();
-    vi.clearAllMocks();
-
-    // 2 回目マウント → キャッシュから読むので isLoading が false のまま、API 呼ばれない
     const { result } = renderHook(() => useNonMemberList(1));
 
-    expect(result.current.isLoading).toBe(false);
-    expect(result.current.users).toEqual(mockUsers);
-    expect(vi.mocked(fetchNonMembers)).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.users).toEqual(initialUsers);
+    expect(vi.mocked(fetchNonMembers)).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      result.current.refetch();
+    });
+
+    await waitFor(() => {
+      expect(vi.mocked(fetchNonMembers)).toHaveBeenCalledTimes(2);
+    });
+
+    await waitFor(() => {
+      expect(result.current.users).toEqual(refreshedUsers);
+    });
   });
 
   it("初期ローディング状態が true である", () => {

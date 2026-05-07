@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { fetchUser } from "@/pages/user-detail/api/fetch-user";
+import { fetchUser } from "@/pages/users/api/fetch-user";
 
 vi.mock("@/shared/api", () => ({
   apiFetch: vi.fn(),

@@ -2,7 +2,7 @@ import { Skeleton } from "@radix-ui/themes";
 import { FaChevronLeft } from "react-icons/fa6";
 import { useNavigate, useParams } from "react-router";
 
-import { useUserDetail } from "@/pages/user-detail/model/user-detail-state";
+import { useUserDetail } from "@/pages/users/model/useUserDetail";
 import { styles } from "./UserDetailPage.styles";
 
 export function UserDetailPage() {

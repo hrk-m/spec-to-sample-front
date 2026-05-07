@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Box, Callout, Flex, Heading, Skeleton, Spinner, Text, TextField } from "@radix-ui/themes";
 import { FaMagnifyingGlass } from "react-icons/fa6";
 import { useNavigate } from "react-router";
@@ -11,9 +12,10 @@ const SKELETON_ROWS = 5;
 
 type GroupListProps = {
   onGroupClick?: (groupId: number) => void;
+  externalRefetchKey?: number;
 };
 
-export function GroupList({ onGroupClick }: GroupListProps) {
+export function GroupList({ onGroupClick, externalRefetchKey }: GroupListProps) {
   const navigate = useNavigate();
   const {
     groups,
@@ -25,7 +27,13 @@ export function GroupList({ onGroupClick }: GroupListProps) {
     sentinelRef,
     setSearchQuery,
     groupCountLabel,
+    refetch,
   } = useGroupList();
+
+  useEffect(() => {
+    if (externalRefetchKey === undefined || externalRefetchKey === 0) return;
+    refetch();
+  }, [externalRefetchKey, refetch]);
 
   const isInitialLoading = isLoading && groups.length === 0;
 

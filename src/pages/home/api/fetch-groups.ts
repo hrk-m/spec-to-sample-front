@@ -1,5 +1,12 @@
-import type { FetchGroupsParams, GroupsResponse } from "@/pages/home/model/group";
+import type { GroupsResponse } from "@/entities/group";
+
 import { apiFetch } from "@/shared/api";
+
+export type FetchGroupsParams = {
+  q?: string;
+  limit?: number;
+  offset?: number;
+};
 
 export function fetchGroups(params: FetchGroupsParams): Promise<GroupsResponse> {
   const query = new URLSearchParams();

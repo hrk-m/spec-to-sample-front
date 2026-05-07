@@ -1,13 +1,12 @@
 import { MockIntersectionObserver } from "@/test/setup";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as deleteGroupMembersModule from "@/pages/group-detail/api/delete-group-members";
 import { fetchGroupMembers } from "@/pages/group-detail/api/fetch-group-members";
-import type { MembersResponse } from "@/pages/group-detail/model/group-detail";
-import { clearMemberListCache, FETCH_LIMIT } from "@/pages/group-detail/model/member-list";
-import * as memberList from "@/pages/group-detail/model/member-list";
+import type { MembersResponse } from "@/pages/group-detail/model/members-response";
+import { FETCH_LIMIT } from "@/pages/group-detail/model/useMemberList";
 import { MemberList } from "@/pages/group-detail/ui/MemberList";
 
 vi.mock("@/pages/group-detail/api/fetch-group-members", () => ({
@@ -38,12 +37,12 @@ const mockMembersResponse: MembersResponse = {
     },
   ],
   total: 2,
+  duplicate_count: 0,
 };
 
 describe("MemberList", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    clearMemberListCache();
     MockIntersectionObserver.reset();
   });
 
@@ -120,7 +119,11 @@ describe("MemberList", () => {
   });
 
   it("メンバーが 0 人の場合は空メッセージを表示する", async () => {
-    vi.mocked(fetchGroupMembers).mockResolvedValueOnce({ members: [], total: 0 });
+    vi.mocked(fetchGroupMembers).mockResolvedValueOnce({
+      members: [],
+      total: 0,
+      duplicate_count: 0,
+    });
 
     render(<MemberList groupId={GROUP_ID} />);
 
@@ -139,6 +142,7 @@ describe("MemberList", () => {
         source_groups: [{ group_id: GROUP_ID, group_name: "Engineering" }],
       })),
       total: 50,
+      duplicate_count: 0,
     };
     vi.mocked(fetchGroupMembers).mockResolvedValueOnce(manyMembers);
 
@@ -175,6 +179,7 @@ describe("MemberList", () => {
         source_groups: [{ group_id: GROUP_ID, group_name: "Engineering" }],
       })),
       total: 55,
+      duplicate_count: 0,
     };
     vi.mocked(fetchGroupMembers).mockResolvedValueOnce(manyMembers);
 
@@ -189,7 +194,7 @@ describe("MemberList", () => {
     expect(screen.getByText("Last55 First55")).toBeInTheDocument();
   });
 
-  it("再表示時はキャッシュを使ってスケルトンを出さない", async () => {
+  it("再マウント時はローディングが発生する（キャッシュなし）", async () => {
     vi.mocked(fetchGroupMembers)
       .mockResolvedValueOnce(mockMembersResponse)
       .mockReturnValueOnce(new Promise(() => {}));
@@ -204,8 +209,8 @@ describe("MemberList", () => {
 
     render(<MemberList groupId={GROUP_ID} />);
 
-    expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
-    expect(screen.queryByText("loading members...")).not.toBeInTheDocument();
+    // キャッシュが無いため再マウント時はローディングスケルトンが表示される
+    expect(screen.getByText("loading members...")).toBeInTheDocument();
   });
 
   it("検索入力でメンバーを検索できる", async () => {
@@ -223,6 +228,7 @@ describe("MemberList", () => {
           },
         ],
         total: 1,
+        duplicate_count: 0,
       });
 
     render(<MemberList groupId={GROUP_ID} />);
@@ -261,8 +267,16 @@ describe("MemberList", () => {
     ];
 
     vi.mocked(fetchGroupMembers)
-      .mockResolvedValueOnce({ members: initialMembers, total: FETCH_LIMIT + 1 })
-      .mockResolvedValueOnce({ members: additionalMembers, total: FETCH_LIMIT + 1 });
+      .mockResolvedValueOnce({
+        members: initialMembers,
+        total: FETCH_LIMIT + 1,
+        duplicate_count: 0,
+      })
+      .mockResolvedValueOnce({
+        members: additionalMembers,
+        total: FETCH_LIMIT + 1,
+        duplicate_count: 0,
+      });
 
     render(<MemberList groupId={GROUP_ID} />);
 
@@ -317,7 +331,11 @@ describe("MemberList", () => {
     }));
 
     vi.mocked(fetchGroupMembers)
-      .mockResolvedValueOnce({ members: initialMembers, total: FETCH_LIMIT + 10 })
+      .mockResolvedValueOnce({
+        members: initialMembers,
+        total: FETCH_LIMIT + 10,
+        duplicate_count: 0,
+      })
       .mockRejectedValueOnce(new Error("500 Internal Server Error"));
 
     render(<MemberList groupId={GROUP_ID} />);
@@ -346,6 +364,7 @@ describe("MemberList", () => {
     vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse).mockResolvedValueOnce({
       members: [],
       total: 31,
+      duplicate_count: 0,
     });
 
     render(<MemberList groupId={GROUP_ID} />);
@@ -382,6 +401,7 @@ describe("MemberList", () => {
           },
         ],
         total: 1,
+        duplicate_count: 0,
       });
 
     render(<MemberList groupId={GROUP_ID} />);
@@ -412,7 +432,6 @@ describe("MemberList", () => {
 describe("MemberList - 全選択ヘッダーチェックボックス", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    clearMemberListCache();
     MockIntersectionObserver.reset();
   });
 
@@ -459,7 +478,6 @@ describe("MemberList - 全選択ヘッダーチェックボックス", () => {
       expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
     });
 
-    // 最初の 1 件だけチェック
     const memberCheckboxes = screen.getAllByTestId("member-checkbox");
     await user.click(memberCheckboxes[0] as Element);
 
@@ -499,7 +517,6 @@ describe("MemberList - 全選択ヘッダーチェックボックス", () => {
 
     const headerCheckbox = screen.getByTestId("header-checkbox");
 
-    // まず全選択
     await user.click(headerCheckbox);
 
     const memberCheckboxes = screen.getAllByTestId("member-checkbox");
@@ -507,7 +524,6 @@ describe("MemberList - 全選択ヘッダーチェックボックス", () => {
       expect(checkbox).toHaveAttribute("aria-checked", "true");
     }
 
-    // ヘッダーをもう一度クリックで全解除
     await user.click(headerCheckbox);
 
     for (const checkbox of memberCheckboxes) {
@@ -525,14 +541,12 @@ describe("MemberList - 全選択ヘッダーチェックボックス", () => {
       expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
     });
 
-    // 最初の 1 件だけチェックして indeterminate にする
     const memberCheckboxes = screen.getAllByTestId("member-checkbox");
     await user.click(memberCheckboxes[0] as Element);
 
     const headerCheckbox = screen.getByTestId("header-checkbox") as HTMLInputElement;
     expect(headerCheckbox.indeterminate).toBe(true);
 
-    // ヘッダークリックで全選択
     await user.click(headerCheckbox);
 
     for (const checkbox of memberCheckboxes) {
@@ -541,7 +555,11 @@ describe("MemberList - 全選択ヘッダーチェックボックス", () => {
   });
 
   it("メンバー 0 件: ヘッダー checkbox が disabled=true", async () => {
-    vi.mocked(fetchGroupMembers).mockResolvedValueOnce({ members: [], total: 0 });
+    vi.mocked(fetchGroupMembers).mockResolvedValueOnce({
+      members: [],
+      total: 0,
+      duplicate_count: 0,
+    });
 
     render(<MemberList groupId={GROUP_ID} onRefetch={vi.fn()} />);
 
@@ -555,17 +573,9 @@ describe("MemberList - 全選択ヘッダーチェックボックス", () => {
 });
 
 describe("MemberList - メンバー削除", () => {
-  let clearCacheSpy: ReturnType<typeof vi.spyOn>;
-
   beforeEach(() => {
     vi.resetAllMocks();
-    clearMemberListCache();
     MockIntersectionObserver.reset();
-    clearCacheSpy = vi.spyOn(memberList, "clearMemberListCache");
-  });
-
-  afterEach(() => {
-    clearCacheSpy.mockRestore();
   });
 
   it("0 件チェック時は削除ボタンが disabled、1 件以上で enabled になる", async () => {
@@ -608,13 +618,13 @@ describe("MemberList - メンバー削除", () => {
     });
   });
 
-  it("削除成功後に clearMemberListCache と onRefetch が呼ばれ、チェック状態がリセットされる", async () => {
+  it("削除成功後に onRefetch が呼ばれ、チェック状態がリセットされる", async () => {
     const user = userEvent.setup();
     const onRefetch = vi.fn();
-    vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
+    vi.mocked(fetchGroupMembers)
+      .mockResolvedValueOnce(mockMembersResponse)
+      .mockResolvedValueOnce(mockMembersResponse);
     vi.mocked(deleteGroupMembersModule.deleteGroupMembers).mockResolvedValueOnce(undefined);
-    // clearMemberListCache() 後の再フェッチ用モック
-    vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
 
     render(<MemberList groupId={GROUP_ID} onRefetch={onRefetch} />);
 
@@ -632,7 +642,6 @@ describe("MemberList - メンバー削除", () => {
     await user.click(confirmButton);
 
     await waitFor(() => {
-      expect(clearCacheSpy).toHaveBeenCalled();
       expect(onRefetch).toHaveBeenCalled();
     });
 
@@ -701,7 +710,6 @@ describe("MemberList - メンバー削除", () => {
   });
 });
 
-// PRD #24-#32: 所属元列 / チェックボックス制御 / 全選択判定
 describe("MemberList - 所属元列・子孫メンバー制御", () => {
   const DESCENDANT_GROUP_ID = 99;
 
@@ -731,15 +739,14 @@ describe("MemberList - 所属元列・子孫メンバー制御", () => {
       },
     ],
     total: 3,
+    duplicate_count: 0,
   };
 
   beforeEach(() => {
     vi.resetAllMocks();
-    clearMemberListCache();
     MockIntersectionObserver.reset();
   });
 
-  // #24: 「所属元」列ヘッダーが存在する
   it("#24: 「所属元」列ヘッダーが columnheader ロールで取得できる", async () => {
     vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
 
@@ -752,7 +759,6 @@ describe("MemberList - 所属元列・子孫メンバー制御", () => {
     expect(screen.getByRole("columnheader", { name: "所属元" })).toBeInTheDocument();
   });
 
-  // #25: source_groups に groupId が含まれるとき「自グループ」を表示
   it("#25: source_groups に groupId が含まれる行は「自グループ」と表示される", async () => {
     vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
 
@@ -767,7 +773,6 @@ describe("MemberList - 所属元列・子孫メンバー制御", () => {
     expect(selfGroupCells.length).toBeGreaterThan(0);
   });
 
-  // #26: source_groups に groupId が含まれない行は group_name を表示
   it("#26: source_groups に groupId が含まれない行は group_name を表示する", async () => {
     vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mixedMembersResponse);
 
@@ -780,7 +785,6 @@ describe("MemberList - 所属元列・子孫メンバー制御", () => {
     expect(screen.getByText("Frontend Team")).toBeInTheDocument();
   });
 
-  // #27: チェックボックスは親直属行のみ表示、子孫行はセルを空にする
   it("#27: 親直属行のみチェックボックスが表示され、子孫行はチェックボックスなし", async () => {
     vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mixedMembersResponse);
 
@@ -795,7 +799,6 @@ describe("MemberList - 所属元列・子孫メンバー制御", () => {
     expect(memberCheckboxes).toHaveLength(2);
   });
 
-  // #28: 親直属メンバークリックで onMemberClick が source_groups を含む UserSummary で呼ばれる
   it("#28: 親直属メンバー行クリックで onMemberClick が source_groups を含む UserSummary で呼ばれる", async () => {
     const user = userEvent.setup();
     const onMemberClick = vi.fn();
@@ -818,7 +821,6 @@ describe("MemberList - 所属元列・子孫メンバー制御", () => {
     );
   });
 
-  // #29: 子孫由来行クリックで onMemberClick が呼ばれない
   it("#29: 子孫由来メンバー行クリックで onMemberClick が呼ばれない", async () => {
     const user = userEvent.setup();
     const onMemberClick = vi.fn();
@@ -835,7 +837,6 @@ describe("MemberList - 所属元列・子孫メンバー制御", () => {
     expect(onMemberClick).not.toHaveBeenCalled();
   });
 
-  // #30: 全選択チェックボックスは親直属メンバー数基準で判定される
   it("#30: 全選択チェックボックスは親直属メンバー数（子孫除く）基準で checked になる", async () => {
     const user = userEvent.setup();
     vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mixedMembersResponse);
@@ -857,7 +858,6 @@ describe("MemberList - 所属元列・子孫メンバー制御", () => {
     expect(headerCheckbox.indeterminate).toBe(false);
   });
 
-  // #31: スケルトン行が新しい列数に追従する
   it("#31: ローディング中のスケルトン行が 4 列構成で正しく描画される", () => {
     vi.mocked(fetchGroupMembers).mockReturnValue(new Promise(() => {}));
 
@@ -869,7 +869,6 @@ describe("MemberList - 所属元列・子孫メンバー制御", () => {
     expect(loadingCell).toHaveAttribute("colspan", "3");
   });
 
-  // #31b: onRefetch あり（チェックボックス列が有効）のスケルトン行は colSpan=4
   it("#31b: onRefetch が渡された場合のスケルトン行は colSpan=4 で描画される", () => {
     vi.mocked(fetchGroupMembers).mockReturnValue(new Promise(() => {}));
 
@@ -881,7 +880,6 @@ describe("MemberList - 所属元列・子孫メンバー制御", () => {
     expect(loadingCell).toHaveAttribute("colspan", "4");
   });
 
-  // #32: 既存テストが新型 UserSummary で通る（backward compatibility）
   it("#32: 既存テストが新型 UserSummary（source_groups フィールドあり）で全 pass する", async () => {
     vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
 
@@ -913,6 +911,7 @@ describe("MemberList - 所属元列・子孫メンバー制御", () => {
         },
       ],
       total: 1,
+      duplicate_count: 0,
     };
     vi.mocked(fetchGroupMembers).mockResolvedValueOnce(multiSourceResponse);
 
@@ -941,6 +940,7 @@ describe("MemberList - 所属元列・子孫メンバー制御", () => {
         },
       ],
       total: 1,
+      duplicate_count: 0,
     };
     vi.mocked(fetchGroupMembers).mockResolvedValueOnce(multiSourceResponse);
 
@@ -953,5 +953,146 @@ describe("MemberList - 所属元列・子孫メンバー制御", () => {
     // source_groups に groupId=GROUP_ID が含まれるため isDirect=true → チェックボックス表示
     const memberCheckboxes = screen.getAllByTestId("member-checkbox");
     expect(memberCheckboxes).toHaveLength(1);
+  });
+});
+
+describe("MemberList - onTotalChange", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    MockIntersectionObserver.reset();
+  });
+
+  it("useMemberList の total が確定したとき onTotalChange が呼ばれる", async () => {
+    const onTotalChange = vi.fn();
+    vi.mocked(fetchGroupMembers).mockResolvedValueOnce({
+      members: [],
+      total: 7,
+      duplicate_count: 0,
+    });
+
+    render(<MemberList groupId={GROUP_ID} onTotalChange={onTotalChange} />);
+
+    await waitFor(() => {
+      expect(onTotalChange).toHaveBeenCalledWith(7);
+    });
+  });
+
+  it("onTotalChange が未定義のとき total が変化してもエラーにならない", async () => {
+    vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
+
+    expect(() => render(<MemberList groupId={GROUP_ID} />)).not.toThrow();
+
+    await waitFor(() => {
+      expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
+    });
+  });
+});
+
+describe("MemberList - 自グループを除外チェックボックス", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    MockIntersectionObserver.reset();
+  });
+
+  it("#40: onExcludeDirectMembersChange を渡すと「自グループを除外」チェックボックスが初期値 unchecked で表示される", async () => {
+    vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
+
+    render(
+      <MemberList
+        groupId={GROUP_ID}
+        excludeDirectMembers={false}
+        onExcludeDirectMembersChange={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
+    });
+
+    const checkbox = screen.getByRole("checkbox", { name: "自グループを除外" });
+    expect(checkbox).toBeInTheDocument();
+    expect(checkbox).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("#41: 「自グループを除外」チェックボックスをチェックすると onExcludeDirectMembersChange(true) が呼ばれる", async () => {
+    const user = userEvent.setup();
+    const onExcludeDirectMembersChange = vi.fn();
+    vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
+
+    render(
+      <MemberList
+        groupId={GROUP_ID}
+        excludeDirectMembers={false}
+        onExcludeDirectMembersChange={onExcludeDirectMembersChange}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
+    });
+
+    const checkbox = screen.getByRole("checkbox", { name: "自グループを除外" });
+    await user.click(checkbox);
+
+    expect(onExcludeDirectMembersChange).toHaveBeenCalledTimes(1);
+    expect(onExcludeDirectMembersChange).toHaveBeenCalledWith(true);
+  });
+
+  it("#42: excludeDirectMembers=false のとき「自グループを除外」チェックボックスが unchecked", async () => {
+    vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
+
+    render(
+      <MemberList
+        groupId={GROUP_ID}
+        excludeDirectMembers={false}
+        onExcludeDirectMembersChange={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
+    });
+
+    const checkbox = screen.getByRole("checkbox", { name: "自グループを除外" });
+    expect(checkbox).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("#43: excludeDirectMembers=true のとき「自グループを除外」チェックボックスが checked", async () => {
+    vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
+
+    render(
+      <MemberList
+        groupId={GROUP_ID}
+        excludeDirectMembers={true}
+        onExcludeDirectMembersChange={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
+    });
+
+    const checkbox = screen.getByRole("checkbox", { name: "自グループを除外" });
+    expect(checkbox).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("#44: 全エントリ除外により結果が 0 件のとき「No members found.」が表示される", async () => {
+    vi.mocked(fetchGroupMembers).mockResolvedValueOnce({
+      members: [],
+      total: 0,
+      duplicate_count: 0,
+    });
+
+    render(
+      <MemberList
+        groupId={GROUP_ID}
+        excludeDirectMembers={true}
+        onExcludeDirectMembersChange={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("No members found.")).toBeInTheDocument();
+    });
   });
 });

@@ -1,4 +1,4 @@
-import { appColors } from "@/shared/ui";
+import { appColors } from "@/shared/config";
 
 const SIDEBAR_WIDTH = 260;
 export const TRANSITION_DURATION_MS = 420;

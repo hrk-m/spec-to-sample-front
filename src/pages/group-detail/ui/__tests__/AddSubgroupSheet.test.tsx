@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { addSubgroup } from "@/pages/group-detail/api/add-subgroup";
-import { fetchGroupsForSheet } from "@/pages/group-detail/api/fetch-groups";
+import { fetchGroups } from "@/pages/group-detail/api/fetch-groups";
 import { AddSubgroupSheet } from "@/pages/group-detail/ui/AddSubgroupSheet";
 
 vi.mock("@/pages/group-detail/api/add-subgroup", () => ({
@@ -11,14 +11,13 @@ vi.mock("@/pages/group-detail/api/add-subgroup", () => ({
 }));
 
 vi.mock("@/pages/group-detail/api/fetch-groups", () => ({
-  fetchGroupsForSheet: vi.fn(),
+  fetchGroups: vi.fn(),
 }));
 
 const mockAddSubgroup = addSubgroup as ReturnType<typeof vi.fn>;
-const mockFetchGroupsForSheet = fetchGroupsForSheet as ReturnType<typeof vi.fn>;
+const mockFetchGroups = fetchGroups as ReturnType<typeof vi.fn>;
 
 const mockOnClose = vi.fn();
-const mockOnSuccess = vi.fn();
 
 const sampleGroups = [
   { id: 2, name: "Group B", description: "desc b", member_count: 0 },
@@ -36,28 +35,21 @@ const WAIT_OPTIONS = { timeout: 2000 };
 describe("AddSubgroupSheet", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetchGroupsForSheet.mockResolvedValue({
+    mockFetchGroups.mockResolvedValue({
       groups: sampleGroups,
       total: sampleGroups.length,
     });
   });
 
-  // テスト #1: 正常系 — グループ選択 → 追加ボタン押下 → 201 成功 → onClose が呼ばれ refetch
-  it("グループを選択して追加ボタンを押すと201成功後にonCloseが呼ばれリフレッシュされる", async () => {
+  // テスト #1: 正常系 — グループ選択 → 追加ボタン押下 → 201 成功 → onClose が呼ばれる
+  it("グループを選択して追加ボタンを押すと201成功後にonCloseが呼ばれる", async () => {
     const user = userEvent.setup();
     mockAddSubgroup.mockResolvedValueOnce({
       parent_group_id: 1,
       child_group_id: 2,
     });
 
-    render(
-      <AddSubgroupSheet
-        groupId={1}
-        onClose={mockOnClose}
-        onSuccess={mockOnSuccess}
-        subgroups={[]}
-      />,
-    );
+    render(<AddSubgroupSheet groupId={1} onClose={mockOnClose} subgroups={[]} />);
 
     await waitFor(() => {
       expect(screen.getByText("Group B")).toBeInTheDocument();
@@ -68,21 +60,13 @@ describe("AddSubgroupSheet", () => {
 
     await waitFor(() => {
       expect(addSubgroup).toHaveBeenCalledWith({ groupId: 1, childGroupId: 2 });
-      expect(mockOnSuccess).toHaveBeenCalledOnce();
       expect(mockOnClose).toHaveBeenCalledOnce();
     }, WAIT_OPTIONS);
   });
 
   // テスト #2: 分岐条件 — グループ未選択時は追加ボタン disabled
   it("グループ未選択時は追加ボタンがdisabledである", async () => {
-    render(
-      <AddSubgroupSheet
-        groupId={1}
-        onClose={mockOnClose}
-        onSuccess={mockOnSuccess}
-        subgroups={[]}
-      />,
-    );
+    render(<AddSubgroupSheet groupId={1} onClose={mockOnClose} subgroups={[]} />);
 
     await waitFor(() => {
       expect(screen.getByText("Group B")).toBeInTheDocument();
@@ -95,14 +79,7 @@ describe("AddSubgroupSheet", () => {
   it("グループを選択すると追加ボタンがenabledになる", async () => {
     const user = userEvent.setup();
 
-    render(
-      <AddSubgroupSheet
-        groupId={1}
-        onClose={mockOnClose}
-        onSuccess={mockOnSuccess}
-        subgroups={[]}
-      />,
-    );
+    render(<AddSubgroupSheet groupId={1} onClose={mockOnClose} subgroups={[]} />);
 
     await waitFor(() => {
       expect(screen.getByText("Group B")).toBeInTheDocument();
@@ -118,14 +95,7 @@ describe("AddSubgroupSheet", () => {
     const user = userEvent.setup();
     mockAddSubgroup.mockRejectedValueOnce(new Error("400 Bad Request"));
 
-    render(
-      <AddSubgroupSheet
-        groupId={1}
-        onClose={mockOnClose}
-        onSuccess={mockOnSuccess}
-        subgroups={[]}
-      />,
-    );
+    render(<AddSubgroupSheet groupId={1} onClose={mockOnClose} subgroups={[]} />);
 
     await waitFor(() => {
       expect(screen.getByText("Group B")).toBeInTheDocument();
@@ -146,14 +116,7 @@ describe("AddSubgroupSheet", () => {
     const user = userEvent.setup();
     mockAddSubgroup.mockRejectedValueOnce(new Error("409 Conflict"));
 
-    render(
-      <AddSubgroupSheet
-        groupId={1}
-        onClose={mockOnClose}
-        onSuccess={mockOnSuccess}
-        subgroups={[]}
-      />,
-    );
+    render(<AddSubgroupSheet groupId={1} onClose={mockOnClose} subgroups={[]} />);
 
     await waitFor(() => {
       expect(screen.getByText("Group B")).toBeInTheDocument();
@@ -170,43 +133,29 @@ describe("AddSubgroupSheet", () => {
   });
 
   // テスト #6: 正常系 — Sheet 開封時に全件取得され "X groups" 件数が表示される
-  it("Sheet開封時にfetchGroupsForSheetが呼ばれtotalが件数として表示される", async () => {
-    mockFetchGroupsForSheet.mockResolvedValue({
+  it("Sheet開封時にfetchGroupsが呼ばれtotalが件数として表示される", async () => {
+    mockFetchGroups.mockResolvedValue({
       groups: sampleGroups,
       total: 2,
     });
 
-    render(
-      <AddSubgroupSheet
-        groupId={1}
-        onClose={mockOnClose}
-        onSuccess={mockOnSuccess}
-        subgroups={[]}
-      />,
-    );
+    render(<AddSubgroupSheet groupId={1} onClose={mockOnClose} subgroups={[]} />);
 
     await waitFor(() => {
       expect(screen.getByText("2 groups")).toBeInTheDocument();
     }, WAIT_OPTIONS);
 
-    expect(fetchGroupsForSheet).toHaveBeenCalledWith("");
+    expect(fetchGroups).toHaveBeenCalledWith({ q: undefined });
   });
 
   // テスト #8: 分岐条件 — 検索結果が 0 件のとき "0 groups" が表示される
   it("検索結果が0件のとき0 groupsが表示される", async () => {
-    mockFetchGroupsForSheet.mockResolvedValue({
+    mockFetchGroups.mockResolvedValue({
       groups: [],
       total: 0,
     });
 
-    render(
-      <AddSubgroupSheet
-        groupId={1}
-        onClose={mockOnClose}
-        onSuccess={mockOnSuccess}
-        subgroups={[]}
-      />,
-    );
+    render(<AddSubgroupSheet groupId={1} onClose={mockOnClose} subgroups={[]} />);
 
     await waitFor(() => {
       expect(screen.getByText("0 groups")).toBeInTheDocument();
@@ -215,43 +164,29 @@ describe("AddSubgroupSheet", () => {
 
   // テスト #10: 異常系 — GET API がエラーを返す → Sheet 内にエラーメッセージ
   it("GET APIがエラーを返すとSheet内にエラーメッセージが表示される", async () => {
-    mockFetchGroupsForSheet.mockRejectedValueOnce(new Error("500 Internal Server Error"));
+    mockFetchGroups.mockRejectedValueOnce(new Error("500 Internal Server Error"));
 
-    render(
-      <AddSubgroupSheet
-        groupId={1}
-        onClose={mockOnClose}
-        onSuccess={mockOnSuccess}
-        subgroups={[]}
-      />,
-    );
+    render(<AddSubgroupSheet groupId={1} onClose={mockOnClose} subgroups={[]} />);
 
     await waitFor(() => {
       expect(screen.getByText(/Error 500 Internal Server Error/)).toBeInTheDocument();
     }, WAIT_OPTIONS);
   });
 
-  // テスト #11: 外部依存 — fetchGroupsForSheet はモックに差し替える（実際の HTTP 通信は発生しない）
-  it("fetchGroupsForSheetはモックに差し替えられており実HTTP通信は発生しない", async () => {
-    render(
-      <AddSubgroupSheet
-        groupId={1}
-        onClose={mockOnClose}
-        onSuccess={mockOnSuccess}
-        subgroups={[]}
-      />,
-    );
+  // テスト #11: 外部依存 — fetchGroups はモックに差し替える（実際の HTTP 通信は発生しない）
+  it("fetchGroupsはモックに差し替えられており実HTTP通信は発生しない", async () => {
+    render(<AddSubgroupSheet groupId={1} onClose={mockOnClose} subgroups={[]} />);
 
     await waitFor(() => {
-      expect(fetchGroupsForSheet).toHaveBeenCalled();
+      expect(fetchGroups).toHaveBeenCalled();
     }, WAIT_OPTIONS);
 
-    expect(typeof mockFetchGroupsForSheet.mock).toBe("object");
+    expect(typeof mockFetchGroups.mock).toBe("object");
   });
 
   // 既存テスト: subgroups に含まれるグループは選択リストから除外される
   it("subgroups に含まれるグループは選択リストに表示されない", async () => {
-    mockFetchGroupsForSheet.mockResolvedValue({
+    mockFetchGroups.mockResolvedValue({
       groups: sampleGroupsWithA,
       total: sampleGroupsWithA.length,
     });
@@ -260,7 +195,6 @@ describe("AddSubgroupSheet", () => {
       <AddSubgroupSheet
         groupId={1}
         onClose={mockOnClose}
-        onSuccess={mockOnSuccess}
         subgroups={[{ id: 10, name: "Group A", description: "", member_count: 0 }]}
       />,
     );
@@ -273,7 +207,7 @@ describe("AddSubgroupSheet", () => {
   });
 
   // テスト #7: 正常系 — キーワード入力後 300ms で q 付き API が呼ばれる（fake timers）
-  it("キーワード入力後300msでfetchGroupsForSheetが検索キーワードで呼ばれる", async () => {
+  it("キーワード入力後300msでfetchGroupsが検索キーワードで呼ばれる", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
 
     try {
@@ -282,23 +216,16 @@ describe("AddSubgroupSheet", () => {
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
       const devGroups = [{ id: 5, name: "dev-group", description: "dev", member_count: 1 }];
-      mockFetchGroupsForSheet.mockResolvedValueOnce({
+      mockFetchGroups.mockResolvedValueOnce({
         groups: sampleGroups,
         total: 2,
       });
-      mockFetchGroupsForSheet.mockResolvedValueOnce({
+      mockFetchGroups.mockResolvedValueOnce({
         groups: devGroups,
         total: 1,
       });
 
-      render(
-        <AddSubgroupSheet
-          groupId={1}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-          subgroups={[]}
-        />,
-      );
+      render(<AddSubgroupSheet groupId={1} onClose={mockOnClose} subgroups={[]} />);
 
       // 初回ロード（300ms デバウンス後）— async act で Promise 解決まで含めて待つ
       await act(async () => {
@@ -312,7 +239,7 @@ describe("AddSubgroupSheet", () => {
       await user.type(searchInput, "dev");
 
       // 300ms 経過前は初回の1回のみ
-      expect(fetchGroupsForSheet).toHaveBeenCalledTimes(1);
+      expect(fetchGroups).toHaveBeenCalledTimes(1);
 
       // 300ms 経過させる — async act で Promise 解決まで含めて待つ
       await act(async () => {
@@ -320,14 +247,65 @@ describe("AddSubgroupSheet", () => {
         await Promise.resolve();
       });
 
-      expect(fetchGroupsForSheet).toHaveBeenCalledWith("dev");
+      expect(fetchGroups).toHaveBeenCalledWith({ q: "dev" });
     } finally {
       vi.useRealTimers();
     }
   });
 
+  // テスト #12: 追加成功後に追加したグループが一覧から消える
+  it("追加成功後に追加したグループがリストから消える", async () => {
+    const user = userEvent.setup();
+    mockAddSubgroup.mockResolvedValueOnce({
+      parent_group_id: 1,
+      child_group_id: 2,
+    });
+
+    render(<AddSubgroupSheet groupId={1} onClose={mockOnClose} subgroups={[]} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Group B")).toBeInTheDocument();
+    }, WAIT_OPTIONS);
+
+    await user.click(screen.getByText("Group B"));
+    await user.click(screen.getByRole("button", { name: "追加" }));
+
+    await waitFor(() => {
+      expect(mockOnClose).toHaveBeenCalledOnce();
+    }, WAIT_OPTIONS);
+
+    expect(screen.queryByText("Group B")).not.toBeInTheDocument();
+  });
+
+  // テスト #13: 追加成功後に selectedGroupId がリセットされ「追加」ボタンが disabled になる
+  it("追加成功後にselectedGroupIdがリセットされ追加ボタンがdisabledになる", async () => {
+    const user = userEvent.setup();
+    mockAddSubgroup.mockResolvedValueOnce({
+      parent_group_id: 1,
+      child_group_id: 2,
+    });
+
+    render(<AddSubgroupSheet groupId={1} onClose={mockOnClose} subgroups={[]} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Group B")).toBeInTheDocument();
+    }, WAIT_OPTIONS);
+
+    await user.click(screen.getByText("Group B"));
+
+    expect(screen.getByRole("button", { name: "追加" })).not.toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "追加" }));
+
+    await waitFor(() => {
+      expect(mockOnClose).toHaveBeenCalledOnce();
+    }, WAIT_OPTIONS);
+
+    expect(screen.getByRole("button", { name: "追加" })).toBeDisabled();
+  });
+
   // テスト #9: 分岐条件 — 検索フィールドをクリアすると q なしで全件取得される（fake timers）
-  it("検索フィールドをクリアするとfetchGroupsForSheetが空文字で再呼び出しされる", async () => {
+  it("検索フィールドをクリアするとfetchGroupsが空文字で再呼び出しされる", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
 
     try {
@@ -335,19 +313,12 @@ describe("AddSubgroupSheet", () => {
 
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
-      mockFetchGroupsForSheet.mockResolvedValue({
+      mockFetchGroups.mockResolvedValue({
         groups: sampleGroups,
         total: 2,
       });
 
-      render(
-        <AddSubgroupSheet
-          groupId={1}
-          onClose={mockOnClose}
-          onSuccess={mockOnSuccess}
-          subgroups={[]}
-        />,
-      );
+      render(<AddSubgroupSheet groupId={1} onClose={mockOnClose} subgroups={[]} />);
 
       // 初回ロード
       await act(() => {
@@ -370,10 +341,10 @@ describe("AddSubgroupSheet", () => {
         vi.advanceTimersByTime(300);
       });
 
-      const calls = mockFetchGroupsForSheet.mock.calls as string[][];
+      const calls = mockFetchGroups.mock.calls;
       const lastCall = calls.at(-1);
       expect(lastCall).toBeDefined();
-      expect(lastCall?.[0]).toBe("");
+      expect(lastCall?.[0]).toEqual({ q: undefined });
     } finally {
       vi.useRealTimers();
     }

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { act, fireEvent, render, renderHook, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { SheetStackProvider, useSheetStack } from "@/shared/lib/sheet-stack";
 
@@ -134,6 +134,55 @@ describe("SheetStackContext", () => {
     expect(result.current.sheets).toHaveLength(0);
   });
 
+  it("removeSheet 時に entry の onClose が 1 回だけ発火する", () => {
+    const { result } = renderHook(() => useSheetStack(), { wrapper });
+    const onClose = vi.fn();
+
+    act(() => {
+      result.current.openSheet({
+        id: "sheet-with-callback",
+        content: <div>Sheet</div>,
+        onClose,
+      });
+    });
+
+    expect(onClose).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.removeSheet("sheet-with-callback");
+    });
+
+    expect(result.current.sheets).toHaveLength(0);
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("closeAll 時に全シートの onClose が発火する", () => {
+    const { result } = renderHook(() => useSheetStack(), { wrapper });
+    const onClose1 = vi.fn();
+    const onClose2 = vi.fn();
+
+    act(() => {
+      result.current.openSheet({
+        id: "sheet-1",
+        content: <div>Sheet 1</div>,
+        onClose: onClose1,
+      });
+      result.current.openSheet({
+        id: "sheet-2",
+        content: <div>Sheet 2</div>,
+        onClose: onClose2,
+      });
+    });
+
+    act(() => {
+      result.current.closeAll();
+    });
+
+    expect(result.current.sheets).toHaveLength(0);
+    expect(onClose1).toHaveBeenCalledOnce();
+    expect(onClose2).toHaveBeenCalledOnce();
+  });
+
   it("ネストしたときは背面シートが 100vw、最前面シートが 90vw で描画される", () => {
     render(
       <SheetStackProvider>
@@ -149,6 +198,31 @@ describe("SheetStackContext", () => {
 
     expect(dialogs).toHaveLength(2);
     expect(backgroundDialog?.style.width).toBe("100vw");
+    expect(foregroundDialog?.style.width).toBe("90vw");
+  });
+
+  it("最上段のシートを閉じ始めると直下のシートも同時に 90vw に戻る", () => {
+    render(
+      <SheetStackProvider>
+        <StackProbe />
+      </SheetStackProvider>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Open Sheet 1" }));
+    fireEvent.click(screen.getByRole("button", { name: "Open Sheet 2" }));
+
+    const closeButtons = screen.getAllByRole("button", { name: "Close" });
+    const closeButton = closeButtons[1] ?? closeButtons[0];
+    if (!closeButton) {
+      throw new Error("Close button not found");
+    }
+    fireEvent.click(closeButton);
+
+    const dialogs = screen.getAllByRole("dialog");
+    const [backgroundDialog, foregroundDialog] = dialogs;
+
+    expect(dialogs).toHaveLength(2);
+    expect(backgroundDialog?.style.width).toBe("90vw");
     expect(foregroundDialog?.style.width).toBe("90vw");
   });
 });

@@ -2,13 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, Button, Checkbox, Flex, Skeleton, Spinner, Text, TextField } from "@radix-ui/themes";
 import { FaMagnifyingGlass } from "react-icons/fa6";
 
-import { addGroupMembers } from "@/pages/group-detail/api/add-group-members";
-import { useGroupDetail } from "@/pages/group-detail/model/group-detail-state";
-import { clearMemberListCache } from "@/pages/group-detail/model/member-list";
-import {
-  clearNonMemberListCache,
-  useNonMemberList,
-} from "@/pages/group-detail/model/useNonMemberList";
+import { useAddGroupMembers } from "@/pages/group-detail/model/useAddGroupMembers";
+import { useNonMemberList } from "@/pages/group-detail/model/useNonMemberList";
+import { useSheetStack } from "@/shared/lib/sheet-stack";
 import { styles } from "./AddMemberSheet.styles";
 
 const SKELETON_ROWS = 5;
@@ -43,16 +39,10 @@ const headerCheckboxInputStyle = {
 
 type AddMemberSheetProps = {
   groupId: number;
-  onClose: () => void;
 };
 
-export function AddMemberSheet({ groupId, onClose }: AddMemberSheetProps) {
-  const { refetch } = useGroupDetail(groupId);
-
-  useEffect(() => {
-    clearNonMemberListCache(groupId);
-  }, [groupId]);
-
+export function AddMemberSheet({ groupId }: AddMemberSheetProps) {
+  const { closeSheet } = useSheetStack();
   const {
     users,
     isLoading,
@@ -64,8 +54,7 @@ export function AddMemberSheet({ groupId, onClose }: AddMemberSheetProps) {
     sentinelRef,
   } = useNonMemberList(groupId);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { isLoading: isSubmitting, error: submitError, submit } = useAddGroupMembers(groupId);
 
   const headerCheckboxRef = useRef<HTMLInputElement>(null);
   const isAllSelected = users.length > 0 && selectedIds.size === users.length;
@@ -100,25 +89,11 @@ export function AddMemberSheet({ groupId, onClose }: AddMemberSheetProps) {
   const handleSubmit = useCallback(async () => {
     if (selectedIds.size === 0) return;
 
-    setIsSubmitting(true);
-    setSubmitError(null);
-
-    try {
-      await addGroupMembers({ groupId, userIds: Array.from(selectedIds) });
-      clearMemberListCache();
-      refetch();
-      onClose();
-    } catch (err: unknown) {
-      const message = String(err);
-      if (message.includes("409")) {
-        setSubmitError("選択したユーザーはすでにメンバーです");
-      } else {
-        setSubmitError("エラーが発生しました。しばらくしてから再試行してください。");
-      }
-    } finally {
-      setIsSubmitting(false);
+    const ok = await submit(Array.from(selectedIds));
+    if (ok) {
+      closeSheet();
     }
-  }, [groupId, selectedIds, refetch, onClose]);
+  }, [selectedIds, submit, closeSheet]);
 
   return (
     <Box style={containerStyle}>
@@ -252,21 +227,18 @@ export function AddMemberSheet({ groupId, onClose }: AddMemberSheetProps) {
         </table>
       )}
 
-      {/* Inline error for additional fetch failures */}
       {fetchMoreError && (
         <Text as="p" style={styles.errorText}>
           {fetchMoreError}
         </Text>
       )}
 
-      {/* Spinner for additional fetch */}
       {isFetchingMore && (
         <Flex justify="center" style={{ marginTop: 12 }}>
           <Spinner aria-label="Loading more non-members" />
         </Flex>
       )}
 
-      {/* Sentinel element for IntersectionObserver */}
       <div
         ref={sentinelRef}
         style={{ height: 1 }}

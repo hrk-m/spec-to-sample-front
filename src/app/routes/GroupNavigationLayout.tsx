@@ -1,13 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { GroupMember } from "@/entities/group";
 import { TbArrowsHorizontal } from "react-icons/tb";
 import { useLocation, useMatch, useNavigate } from "react-router";
 
-import {
-  GroupDetailPage,
-  GroupDetailSheet,
-  MemberDetailSheet,
-  type UserSummary,
-} from "@/pages/group-detail";
+import { GroupDetailPage, GroupDetailSheet, MemberDetailSheet } from "@/pages/group-detail";
 import { HomePage } from "@/pages/home";
 import { UsersPage } from "@/pages/users";
 import { useSheetStack } from "@/shared/lib/sheet-stack";
@@ -67,7 +63,7 @@ function GroupDetailRouteSheet({ groupId }: { groupId: number }) {
     >
       <GroupDetailSheet
         groupId={groupId}
-        onMemberClick={(member: UserSummary) =>
+        onMemberClick={(member: GroupMember) =>
           openSheet({
             id: `member-${member.id}`,
             content: <MemberDetailSheet member={member} />,
@@ -93,6 +89,13 @@ export function GroupNavigationLayout() {
       ? "users"
       : "home";
 
+  const [homeRefetchTrigger, setHomeRefetchTrigger] = useState(0);
+  const previousIsSheetPresentationRef = useRef<boolean | null>(null);
+
+  const triggerHomeRefetch = useCallback(() => {
+    setHomeRefetchTrigger((prev) => prev + 1);
+  }, []);
+
   useLayoutEffect(() => {
     const previousRouteKey = previousRouteKeyRef.current;
 
@@ -102,6 +105,16 @@ export function GroupNavigationLayout() {
 
     previousRouteKeyRef.current = routeKey;
   }, [closeAll, routeKey]);
+
+  useEffect(() => {
+    const previousIsSheet = previousIsSheetPresentationRef.current;
+
+    if (previousIsSheet === true && !isSheetPresentation) {
+      triggerHomeRefetch();
+    }
+
+    previousIsSheetPresentationRef.current = isSheetPresentation;
+  }, [isSheetPresentation, triggerHomeRefetch]);
 
   const handleGroupClick = (groupId: number) => {
     navigate(`/groups/${String(groupId)}`, { state: { presentation: "sheet" } });
@@ -119,7 +132,7 @@ export function GroupNavigationLayout() {
   return (
     <>
       <div inert={isSheetPresentation || undefined} style={{ display: "contents" }}>
-        <HomePage onGroupClick={handleGroupClick} />
+        <HomePage onGroupClick={handleGroupClick} refetchTrigger={homeRefetchTrigger} />
       </div>
       {isSheetPresentation && groupDetailMatch && (
         <GroupDetailRouteSheet groupId={Number(groupDetailMatch.params.id)} />

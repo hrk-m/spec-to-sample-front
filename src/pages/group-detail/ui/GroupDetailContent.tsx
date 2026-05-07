@@ -1,22 +1,23 @@
-import { useCallback, useState } from "react";
-import { Box, Button, Flex, Grid, Heading, Skeleton, Text } from "@radix-ui/themes";
+import { useCallback, useMemo, useState } from "react";
+import type { GroupMember } from "@/entities/group";
+import { Box, Button, Flex, Heading, Skeleton, Text } from "@radix-ui/themes";
 import { useNavigate } from "react-router";
 
-import type { UserSummary } from "@/pages/group-detail/model/group-detail";
-import { useGroupDetail } from "@/pages/group-detail/model/group-detail-state";
-import { clearMemberListCache } from "@/pages/group-detail/model/member-list";
+import { useDebouncedMemberFilter } from "@/pages/group-detail/model/useDebouncedMemberFilter";
+import { useGroupDetail } from "@/pages/group-detail/model/useGroupDetail";
+import { useSubgroupFilter } from "@/pages/group-detail/model/useSubgroupFilter";
 import { useSheetStack } from "@/shared/lib/sheet-stack";
 import { AddMemberSheet } from "./AddMemberSheet";
-import { AddSubgroupSheet } from "./AddSubgroupSheet";
 import { DeleteGroupDialog } from "./DeleteGroupDialog";
 import { EditGroupDialog } from "./EditGroupDialog";
 import { styles } from "./GroupDetailPage.styles";
 import { MemberList } from "./MemberList";
-import { SubgroupList } from "./SubgroupList";
+import { SubgroupFilterChips } from "./SubgroupFilterChips";
+import { SubgroupManagementSheet } from "./SubgroupManagementSheet";
 
 type GroupDetailContentProps = {
   groupId: number;
-  onMemberClick?: (member: UserSummary) => void;
+  onMemberClick?: (member: GroupMember) => void;
 };
 
 function GroupInfoSkeleton() {
@@ -38,47 +39,64 @@ function GroupInfoSkeleton() {
 }
 
 export function GroupDetailContent({ groupId, onMemberClick }: GroupDetailContentProps) {
-  const { group, error, isLoading, refetch, subgroups } = useGroupDetail(groupId);
+  const [isSubgroupSheetOpen, setIsSubgroupSheetOpen] = useState(false);
+  const [isAddMemberSheetOpen, setIsAddMemberSheetOpen] = useState(false);
+  const { group, error, isLoading, refetch, subgroups } = useGroupDetail(groupId, {
+    enabled: !isSubgroupSheetOpen && !isAddMemberSheetOpen,
+  });
   const navigate = useNavigate();
-  const { openSheet, closeSheet } = useSheetStack();
+  const { openSheet } = useSheetStack();
   const shouldShowSkeleton = isLoading && !group;
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
+  const {
+    selectedSubgroupIds,
+    excludeGroupIds,
+    excludeDirectMembers,
+    setExcludeDirectMembers,
+    toggleSubgroup,
+  } = useSubgroupFilter(subgroups, groupId);
+
+  const { debouncedExcludeGroupIds, apiTotal, setApiTotal, duplicateCount, setDuplicateCount } =
+    useDebouncedMemberFilter(excludeGroupIds);
+
+  const memberCount = useMemo(() => {
+    const directCount = group?.member_count ?? 0;
+    const subgroupCount = subgroups
+      .filter((sg) => selectedSubgroupIds.has(sg.id))
+      .reduce((sum, sg) => sum + sg.member_count, 0);
+    return directCount + subgroupCount;
+  }, [group, subgroups, selectedSubgroupIds]);
+
   const handleOpenAddMemberSheet = useCallback(() => {
+    setIsAddMemberSheetOpen(true);
     openSheet({
       id: `add-member-${groupId}`,
-      content: (
-        <AddMemberSheet
-          groupId={groupId}
-          onClose={() => {
-            closeSheet();
-            refetch();
-          }}
-        />
-      ),
+      content: <AddMemberSheet groupId={groupId} />,
+      onClose: () => setIsAddMemberSheetOpen(false),
     });
-  }, [groupId, openSheet, closeSheet, refetch]);
+  }, [groupId, openSheet]);
 
-  const handleOpenAddSubgroupSheet = useCallback(() => {
+  const handleOpenSubgroupManagementSheet = useCallback(() => {
+    setIsSubgroupSheetOpen(true);
     openSheet({
-      id: `add-subgroup-${groupId}`,
-      content: (
-        <AddSubgroupSheet
-          groupId={groupId}
-          onClose={closeSheet}
-          onSuccess={() => {
-            clearMemberListCache();
-            refetch();
-          }}
-          subgroups={subgroups}
-        />
-      ),
+      id: `subgroup-management-${groupId}`,
+      content: <SubgroupManagementSheet groupId={groupId} groupName={group?.name ?? ""} />,
+      onClose: () => setIsSubgroupSheetOpen(false),
     });
-  }, [groupId, openSheet, closeSheet, refetch, subgroups]);
+  }, [groupId, group?.name, openSheet]);
 
   return (
-    <>
+    <Box
+      style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        minHeight: 0,
+      }}
+    >
       {shouldShowSkeleton && <GroupInfoSkeleton />}
 
       {error && !group && (
@@ -95,69 +113,68 @@ export function GroupDetailContent({ groupId, onMemberClick }: GroupDetailConten
             </Text>
           )}
 
-          <Grid columns="2" gap="4" mt="3">
-            {/* 左列: Group ヘッダー + Info カード */}
-            <Box>
-              <Flex align="end" gap="3" style={{ ...styles.sectionHeader, marginTop: 0 }}>
-                <Heading as="h1" style={{ fontSize: 40, fontWeight: 700, letterSpacing: -0.7 }}>
-                  Group
-                </Heading>
-                <Flex gap="2" pb="1">
-                  <Button variant="soft" onClick={() => setEditDialogOpen(true)}>
-                    Edit
-                  </Button>
-                  <Button variant="soft" color="red" onClick={() => setDeleteDialogOpen(true)}>
-                    Delete
-                  </Button>
-                </Flex>
-              </Flex>
-              <Box style={{ ...styles.sectionCard, marginTop: 0 }}>
-                <Box style={{ ...styles.infoRow, ...styles.infoRowBorder }}>
-                  <Text as="p" style={styles.infoLabel}>
-                    Name
-                  </Text>
-                  <Text as="p" style={styles.infoValue}>
-                    {group.name}
-                  </Text>
-                </Box>
-                <Box style={styles.infoRow}>
-                  <Text as="p" style={styles.infoLabel}>
-                    Description
-                  </Text>
-                  <Text as="p" style={styles.infoValue}>
-                    {group.description}
-                  </Text>
-                </Box>
-              </Box>
+          <Box style={styles.groupHeaderCard}>
+            <Box style={{ flex: 1, minWidth: 0 }}>
+              <Heading as="h1" style={styles.groupHeaderName}>
+                {group.name}
+              </Heading>
+              {group.description && (
+                <Text as="p" style={styles.groupHeaderDescription}>
+                  {group.description}
+                </Text>
+              )}
             </Box>
+            <Flex gap="2" style={{ flexShrink: 0 }}>
+              <Button variant="soft" onClick={() => setEditDialogOpen(true)}>
+                Edit
+              </Button>
+              <Button variant="soft" color="red" onClick={() => setDeleteDialogOpen(true)}>
+                Delete
+              </Button>
+            </Flex>
+          </Box>
 
-            {/* 右列: Subgroups ヘッダー + SubgroupList */}
-            <Box>
-              <Flex align="end" gap="3" style={{ ...styles.sectionHeader, marginTop: 0 }}>
-                <Heading as="h1" style={{ fontSize: 40, fontWeight: 700, letterSpacing: -0.7 }}>
-                  Subgroups
-                </Heading>
-                <Flex gap="2" pb="1" align="center">
+          <Box style={styles.chipRow}>
+            <SubgroupFilterChips
+              subgroups={subgroups}
+              selectedSubgroupIds={selectedSubgroupIds}
+              onToggle={toggleSubgroup}
+              onManageClick={handleOpenSubgroupManagementSheet}
+            />
+          </Box>
+
+          <Box style={styles.memberSection}>
+            <Flex style={styles.memberSectionHeader}>
+              <Flex align="center" gap="2">
+                <Text as="p" style={styles.memberSectionTitle}>
+                  すべてのメンバー
+                </Text>
+                <Text as="p" style={styles.sectionMeta}>
+                  {apiTotal ?? memberCount}件
+                </Text>
+                {duplicateCount > 0 && (
                   <Text as="p" style={styles.sectionMeta}>
-                    {subgroups.length} total
+                    重複 {duplicateCount}件
                   </Text>
-                  <Button variant="soft" onClick={handleOpenAddSubgroupSheet}>
-                    追加
-                  </Button>
-                </Flex>
+                )}
               </Flex>
-
-              <SubgroupList
-                groupId={groupId}
-                subgroups={subgroups}
-                error={error}
-                refetch={() => {
-                  clearMemberListCache();
-                  refetch();
-                }}
-              />
-            </Box>
-          </Grid>
+              <Button variant="soft" size="1" onClick={handleOpenAddMemberSheet}>
+                メンバー追加
+              </Button>
+            </Flex>
+            <MemberList
+              groupId={groupId}
+              excludeGroupIds={debouncedExcludeGroupIds}
+              excludeDirectMembers={excludeDirectMembers}
+              onExcludeDirectMembersChange={setExcludeDirectMembers}
+              onMemberClick={onMemberClick}
+              onRefetch={refetch}
+              onTotalChange={setApiTotal}
+              onDuplicateCountChange={setDuplicateCount}
+              scrollContainerStyle={styles.memberScrollContainer}
+              enabled={!isSubgroupSheetOpen && !isAddMemberSheetOpen}
+            />
+          </Box>
 
           <EditGroupDialog
             groupId={groupId}
@@ -174,24 +191,8 @@ export function GroupDetailContent({ groupId, onMemberClick }: GroupDetailConten
             onOpenChange={setDeleteDialogOpen}
             onSuccess={() => void navigate("/")}
           />
-
-          <Box style={styles.sectionHeader}>
-            <Text as="p" style={styles.sectionTitle}>
-              Members
-            </Text>
-            <Flex align="center" gap="3">
-              <Text as="p" style={styles.sectionMeta}>
-                {group.member_count} total
-              </Text>
-              <Button variant="soft" size="1" onClick={handleOpenAddMemberSheet}>
-                メンバー追加
-              </Button>
-            </Flex>
-          </Box>
-
-          <MemberList groupId={groupId} onMemberClick={onMemberClick} onRefetch={refetch} />
         </>
       )}
-    </>
+    </Box>
   );
 }

@@ -1,3 +1,4 @@
+import { type Group, type GroupsResponse } from "@/entities/group";
 import { MockIntersectionObserver } from "@/test/setup";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -5,8 +6,7 @@ import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fetchGroups } from "@/pages/home/api/fetch-groups";
-import type { Group, GroupsResponse } from "@/pages/home/model/group";
-import { clearGroupListCache, FETCH_LIMIT } from "@/pages/home/model/group-list";
+import { FETCH_LIMIT } from "@/pages/home/model/group-list";
 import { GroupList } from "@/pages/home/ui/GroupList";
 
 const mockNavigate = vi.fn();
@@ -19,7 +19,10 @@ vi.mock("react-router", async () => {
   };
 });
 
-function renderWithRouter(props?: { onGroupClick?: (groupId: number) => void }) {
+function renderWithRouter(props?: {
+  onGroupClick?: (groupId: number) => void;
+  externalRefetchKey?: number;
+}) {
   return render(
     <MemoryRouter>
       <GroupList {...props} />
@@ -53,7 +56,6 @@ const mockGroupsResponse: GroupsResponse = {
 describe("GroupList", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    clearGroupListCache();
     MockIntersectionObserver.reset();
   });
 
@@ -137,26 +139,6 @@ describe("GroupList", () => {
     renderWithRouter();
 
     expect(screen.getByRole("heading", { name: "Groups" })).toBeInTheDocument();
-  });
-
-  it("再表示時はキャッシュを使って loading を出さない", async () => {
-    vi.mocked(fetchGroups)
-      .mockResolvedValueOnce(mockGroupsResponse)
-      .mockReturnValueOnce(new Promise(() => {}));
-
-    const { unmount } = renderWithRouter();
-
-    await waitFor(() => {
-      expect(screen.getByText("Engineering")).toBeInTheDocument();
-    });
-
-    unmount();
-
-    renderWithRouter();
-
-    expect(screen.getByText("Engineering")).toBeInTheDocument();
-    expect(screen.getByText("Design")).toBeInTheDocument();
-    expect(screen.queryByText("loading...")).not.toBeInTheDocument();
   });
 
   it("セクションヘッダーを表示する", async () => {
@@ -486,6 +468,40 @@ describe("GroupList", () => {
 
     // After search, previous groups are no longer shown
     expect(screen.queryByText("Group1")).not.toBeInTheDocument();
+  });
+
+  it("externalRefetchKey が変化したとき再フェッチが走る", async () => {
+    vi.mocked(fetchGroups)
+      .mockResolvedValueOnce(mockGroupsResponse)
+      .mockResolvedValueOnce({
+        groups: [
+          { id: 1, name: "Engineering Updated", description: "Engineering team", member_count: 5 },
+        ],
+        total: 1,
+      });
+
+    const { rerender } = renderWithRouter({ externalRefetchKey: 0 });
+
+    await waitFor(() => {
+      expect(screen.getByText("Engineering")).toBeInTheDocument();
+    });
+
+    expect(vi.mocked(fetchGroups)).toHaveBeenCalledTimes(1);
+
+    // externalRefetchKey を変化させる
+    rerender(
+      <MemoryRouter>
+        <GroupList externalRefetchKey={1} />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(vi.mocked(fetchGroups)).toHaveBeenCalledTimes(2);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Engineering Updated")).toBeInTheDocument();
+    });
   });
 
   it("検索で 0 件のとき API の total が全件数でもページネーションを非表示にする", async () => {

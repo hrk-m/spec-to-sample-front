@@ -1,14 +1,19 @@
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 
-import { Sheet, sheetConstants } from "@/shared/ui";
+import { Sheet } from "@/shared/ui";
+import { getSheetWidth } from "./sheetPresentation";
 import { SheetStackContext, type SheetEntry } from "./SheetStackContext";
 
 const BASE_Z_INDEX = 100;
 
 export function SheetStackProvider({ children }: { children: ReactNode }) {
   const [sheets, setSheets] = useState<SheetEntry[]>([]);
+  const onCloseMapRef = useRef<Map<string, () => void>>(new Map());
 
   const openSheet = useCallback((entry: SheetEntry) => {
+    if (entry.onClose) {
+      onCloseMapRef.current.set(entry.id, entry.onClose);
+    }
     setSheets((prev) => [...prev, entry]);
   }, []);
 
@@ -22,11 +27,17 @@ export function SheetStackProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const removeSheet = useCallback((id: string) => {
+    const onClose = onCloseMapRef.current.get(id);
+    onCloseMapRef.current.delete(id);
     setSheets((prev) => prev.filter((sheet) => sheet.id !== id));
+    onClose?.();
   }, []);
 
   const closeAll = useCallback(() => {
+    const callbacks = Array.from(onCloseMapRef.current.values());
+    onCloseMapRef.current.clear();
     setSheets([]);
+    callbacks.forEach((cb) => cb());
   }, []);
 
   const value = useMemo(
@@ -45,9 +56,7 @@ export function SheetStackProvider({ children }: { children: ReactNode }) {
           closing={sheet.closing ?? false}
           isTopMost={index === sheets.length - 1 && !sheet.closing}
           zIndex={BASE_Z_INDEX + index * 2}
-          width={
-            index === sheets.length - 1 ? sheetConstants.defaultWidth : sheetConstants.fullWidth
-          }
+          width={getSheetWidth(sheets, index)}
         >
           {sheet.content}
         </Sheet>

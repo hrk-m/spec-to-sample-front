@@ -1,4 +1,4 @@
-import { appColors } from "@/shared/ui";
+import { appColors } from "@/shared/config";
 
 const colors = {
   separator: appColors.separator,
@@ -26,19 +26,23 @@ export const styles = {
     display: "block",
     color: colors.textSecondary,
   },
+  tableWrapper: {
+    borderRadius: 22,
+    overflow: "clip",
+    border: `1px solid ${colors.separator}`,
+    marginTop: 12,
+  },
   tableRoot: {
     width: "100%",
     borderCollapse: "collapse" as const,
     background: colors.surfaceRaised,
-    border: `1px solid ${colors.separator}`,
-    borderRadius: 22,
-    overflow: "hidden",
-    boxShadow: "0 18px 42px rgba(15, 23, 42, 0.06)",
-    marginTop: 12,
     tableLayout: "fixed" as const,
   },
   tableHeader: {
     background: colors.surfaceRaised,
+    position: "sticky" as const,
+    top: 0,
+    zIndex: 1,
   },
   tableHeaderCell: {
     padding: "12px 16px",

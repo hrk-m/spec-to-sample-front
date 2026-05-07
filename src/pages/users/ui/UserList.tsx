@@ -1,8 +1,8 @@
-import type { User } from "@/entities/user";
 import { Box, Flex, Heading, Skeleton, Spinner, Text, TextField } from "@radix-ui/themes";
 import { FaMagnifyingGlass } from "react-icons/fa6";
 import { useNavigate } from "react-router";
 
+import type { User } from "@/pages/users/model/user";
 import { useUserList } from "@/pages/users/model/user-list";
 import { styles } from "./UserList.styles";
 

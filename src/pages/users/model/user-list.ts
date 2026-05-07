@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { User } from "@/entities/user";
 
 import { fetchUsers } from "@/pages/users/api/fetch-users";
+import type { User } from "@/pages/users/model/user";
 
 export const FETCH_LIMIT = 100;
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import type { User } from "@/entities/user";
 
 import { fetchUser } from "@/pages/users/api/fetch-user";
+import type { User } from "@/pages/users/model/user";
 
 type UserDetailState = {
   user: User | null;

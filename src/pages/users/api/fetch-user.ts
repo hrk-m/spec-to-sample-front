@@ -1,5 +1,4 @@
-import type { User } from "@/entities/user";
-
+import type { User } from "@/pages/users/model/user";
 import { apiFetch, HttpError } from "@/shared/api";
 
 export async function fetchUser(id: string): Promise<User> {

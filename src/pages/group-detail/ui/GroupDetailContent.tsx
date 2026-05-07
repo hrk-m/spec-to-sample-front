@@ -74,9 +74,12 @@ export function GroupDetailContent({ groupId, onMemberClick }: GroupDetailConten
     openSheet({
       id: `add-member-${groupId}`,
       content: <AddMemberSheet groupId={groupId} />,
-      onClose: () => setIsAddMemberSheetOpen(false),
+      onClose: () => {
+        setIsAddMemberSheetOpen(false);
+        refetch();
+      },
     });
-  }, [groupId, openSheet]);
+  }, [groupId, openSheet, refetch]);
 
   const handleOpenSubgroupManagementSheet = useCallback(() => {
     setIsSubgroupSheetOpen(true);

@@ -149,6 +149,7 @@ export function MemberList({
     fetchMoreError,
     sentinelRef,
     setSearchQuery,
+    refetch: refetchMembers,
   } = useMemberList(groupId, excludeGroupIds, { enabled });
 
   useEffect(() => {
@@ -213,6 +214,7 @@ export function MemberList({
     if (ok) {
       setSelectedIds(new Set());
       setDeleteDialogOpen(false);
+      refetchMembers();
       onRefetch?.();
     }
   }

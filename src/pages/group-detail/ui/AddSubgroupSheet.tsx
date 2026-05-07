@@ -6,6 +6,7 @@ import { FaMagnifyingGlass } from "react-icons/fa6";
 import { useAddSubgroup } from "@/pages/group-detail/model/useAddSubgroup";
 import { useSearchableGroupList } from "@/pages/group-detail/model/useSearchableGroupList";
 import { appColors } from "@/shared/config";
+import { useSheetStack } from "@/shared/lib/sheet-stack";
 
 const colors = {
   separator: appColors.separator,
@@ -130,6 +131,7 @@ type AddSubgroupSheetProps = {
 };
 
 export function AddSubgroupSheet({ groupId, onClose, subgroups }: AddSubgroupSheetProps) {
+  const { closeSheet } = useSheetStack();
   const [searchQuery, setSearchQuery] = useState("");
   const {
     groups,
@@ -154,8 +156,9 @@ export function AddSubgroupSheet({ groupId, onClose, subgroups }: AddSubgroupShe
       setAddedIds((prev) => new Set([...prev, selectedGroupId]));
       setSelectedGroupId(null);
       onClose();
+      closeSheet();
     }
-  }, [selectedGroupId, submit, onClose]);
+  }, [selectedGroupId, submit, onClose, closeSheet]);
 
   return (
     <Box style={containerStyle}>

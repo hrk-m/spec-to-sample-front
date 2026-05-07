@@ -39,9 +39,10 @@ const headerCheckboxInputStyle = {
 
 type AddMemberSheetProps = {
   groupId: number;
+  onSuccess?: () => void;
 };
 
-export function AddMemberSheet({ groupId }: AddMemberSheetProps) {
+export function AddMemberSheet({ groupId, onSuccess }: AddMemberSheetProps) {
   const { closeSheet } = useSheetStack();
   const {
     users,
@@ -91,9 +92,10 @@ export function AddMemberSheet({ groupId }: AddMemberSheetProps) {
 
     const ok = await submit(Array.from(selectedIds));
     if (ok) {
+      onSuccess?.();
       closeSheet();
     }
-  }, [selectedIds, submit, closeSheet]);
+  }, [selectedIds, submit, onSuccess, closeSheet]);
 
   return (
     <Box style={containerStyle}>

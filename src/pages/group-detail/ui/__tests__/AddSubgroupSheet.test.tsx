@@ -14,6 +14,16 @@ vi.mock("@/pages/group-detail/api/fetch-groups", () => ({
   fetchGroups: vi.fn(),
 }));
 
+vi.mock("@/shared/lib/sheet-stack", () => ({
+  useSheetStack: vi.fn(() => ({
+    openSheet: vi.fn(),
+    closeSheet: vi.fn(),
+    sheets: [],
+    removeSheet: vi.fn(),
+    closeAll: vi.fn(),
+  })),
+}));
+
 const mockAddSubgroup = addSubgroup as ReturnType<typeof vi.fn>;
 const mockFetchGroups = fetchGroups as ReturnType<typeof vi.fn>;
 

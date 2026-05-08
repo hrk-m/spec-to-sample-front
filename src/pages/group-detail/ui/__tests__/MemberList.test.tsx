@@ -351,9 +351,14 @@ describe("MemberList", () => {
       ]);
     });
 
-    await waitFor(() => {
-      expect(screen.getByText(/500 Internal Server Error/)).toBeInTheDocument();
-    });
+    // FETCH_LIMIT=100 行の table 描画 + sentinel 発火後の state 伝播は、
+    // CI（GitHub Actions ubuntu-latest, jsdom）では default 1000ms を超えるため余裕を持たせる
+    await waitFor(
+      () => {
+        expect(screen.getByText(/500 Internal Server Error/)).toBeInTheDocument();
+      },
+      { timeout: 3000 },
+    );
 
     // Existing items are still in DOM
     expect(screen.getByText("Last1 First1")).toBeInTheDocument();

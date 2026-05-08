@@ -11,8 +11,8 @@ export type DebouncedMemberFilter = {
 };
 
 /**
- * フィルター変化を 300ms デバウンスしつつ、変化を検知した瞬間に
- * apiTotal / duplicateCount を即時リセットして古い値の表示を避ける。
+ * フィルター変化を 300ms デバウンスしてから debouncedExcludeGroupIds を更新する。
+ * apiTotal / duplicateCount は次のフェッチ完了時に MemberList 経由で更新される。
  */
 export function useDebouncedMemberFilter(excludeGroupIds: number[]): DebouncedMemberFilter {
   const excludeGroupIdsKey = excludeGroupIds.toSorted((a, b) => a - b).join(",");
@@ -28,9 +28,6 @@ export function useDebouncedMemberFilter(excludeGroupIds: number[]): DebouncedMe
       isFirstRenderRef.current = false;
       return;
     }
-
-    setApiTotal(null);
-    setDuplicateCount(0);
 
     const timer = setTimeout(() => {
       setDebouncedExcludeGroupIds(excludeGroupIds);

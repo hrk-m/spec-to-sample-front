@@ -531,7 +531,7 @@ describe("GroupDetailContent - debounce fetch (サブグループ ON/OFF 時の 
     expect(lastCallFinal?.[1]).toEqual([]);
   });
 
-  it("フィルター変化直後は apiTotal がリセットされ memberCount にフォールバックする", async () => {
+  it("フィルター変化直後は古い apiTotal がそのまま維持される", async () => {
     const { useMemberList } = await import("@/pages/group-detail/model/useMemberList");
     vi.mocked(useMemberList).mockReturnValue({
       members: [],
@@ -565,9 +565,8 @@ describe("GroupDetailContent - debounce fetch (サブグループ ON/OFF 時の 
       fireEvent.click(chip);
     });
 
-    // デバウンス完了前: apiTotal がリセットされ memberCount (group.member_count=3) にフォールバック
-    // group.member_count=3 で subgroups が全除外なので memberCount = 3
-    expect(screen.queryByText("99件")).not.toBeInTheDocument();
+    // デバウンス完了前: 即時リセットしないため古い apiTotal (99件) がそのまま表示される
+    expect(screen.getByText("99件")).toBeInTheDocument();
 
     // デバウンス完了
     act(() => {
@@ -575,7 +574,7 @@ describe("GroupDetailContent - debounce fetch (サブグループ ON/OFF 時の 
     });
   });
 
-  it("フィルター変化直後は duplicateCount が 0 にリセットされる", async () => {
+  it("フィルター変化直後は古い duplicateCount がそのまま維持される", async () => {
     const { useMemberList } = await import("@/pages/group-detail/model/useMemberList");
     vi.mocked(useMemberList).mockReturnValue({
       members: [],
@@ -609,8 +608,8 @@ describe("GroupDetailContent - debounce fetch (サブグループ ON/OFF 時の 
       fireEvent.click(chip);
     });
 
-    // デバウンス完了前: duplicateCount がリセットされて重複表示が消える
-    expect(screen.queryByText("重複 5件")).not.toBeInTheDocument();
+    // デバウンス完了前: 即時リセットしないため古い duplicateCount (重複 5件) がそのまま表示される
+    expect(screen.getByText("重複 5件")).toBeInTheDocument();
 
     // デバウンス完了
     act(() => {

@@ -1,5 +1,11 @@
 import "@testing-library/jest-dom";
 
+import { configure } from "@testing-library/dom";
+
+// CI（GitHub Actions ubuntu-latest, jsdom）では 100 行規模の table 描画 +
+// 非同期 state 伝播が default 1000ms を超えるため、waitFor / findBy* のタイムアウトを延長する。
+configure({ asyncUtilTimeout: 3000 });
+
 // ResizeObserver mock for jsdom environment
 // jsdom does not implement ResizeObserver natively
 class MockResizeObserver implements ResizeObserver {

@@ -47,6 +47,22 @@ describe("Sheet", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it("オーバーレイクリックで onClose が呼ばれる", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+
+    render(
+      <Sheet onClose={onClose} onRemove={vi.fn()}>
+        <p>Sheet content</p>
+      </Sheet>,
+    );
+
+    const overlay = screen.getByTestId("sheet-overlay");
+    await user.click(overlay);
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it("ESC キーで onClose が呼ばれる", () => {
     const onClose = vi.fn();
 

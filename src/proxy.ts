@@ -78,6 +78,8 @@ export async function handleApiProxy(req: Request, upstreamBase: string): Promis
   const headers = new Headers(req.headers);
   headers.delete("host");
 
+  const requestId = req.headers.get("x-request-id") ?? "";
+
   const reqUrl = new URL(req.url);
   const upstreamUrl = `${upstreamBase}${reqUrl.pathname}${reqUrl.search}`;
 
@@ -128,6 +130,7 @@ export async function handleApiProxy(req: Request, upstreamBase: string): Promis
       status: beRes.status,
       header: logHeader,
       ...(reqBodyField !== undefined && { request_body: reqBodyField }),
+      request_id: requestId,
     };
 
     process.stdout.write(JSON.stringify(log) + "\n");
@@ -147,6 +150,7 @@ export async function handleApiProxy(req: Request, upstreamBase: string): Promis
       status: 0,
       header: logHeader,
       error_message: String(err),
+      request_id: requestId,
     };
 
     process.stdout.write(JSON.stringify(log) + "\n");

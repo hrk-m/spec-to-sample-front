@@ -57,6 +57,7 @@ describe("handleApiProxy", () => {
     const logLine = writeSpy.mock.calls[0][0] as string;
     const log = JSON.parse(logLine.trim());
     expect(log.login_user).toBe(uuid);
+    expect(log).toHaveProperty("request_id");
   });
 
   it("BE 接続成功 + x-login-user なし → login_user が空文字", async () => {
@@ -77,6 +78,7 @@ describe("handleApiProxy", () => {
     const logLine = writeSpy.mock.calls[0][0] as string;
     const log = JSON.parse(logLine.trim());
     expect(log.login_user).toBe("");
+    expect(log).toHaveProperty("request_id");
   });
 
   it("BE 接続成功 → ブラウザ向けレスポンスに x-login-user ヘッダーが存在しない", async () => {
@@ -108,6 +110,7 @@ describe("handleApiProxy", () => {
     const log = JSON.parse(logLine.trim());
     expect(log.error_message).toBe("Error: Connection refused");
     expect(log.status).toBe(0);
+    expect(log).toHaveProperty("request_id");
   });
 
   it("ヘッダー許可リスト → 許可リスト内ヘッダーのみが header に含まれる", async () => {
@@ -401,5 +404,92 @@ describe("handleApiProxy", () => {
     }
 
     expect(sentBodyText).toBe(originalBody);
+  });
+
+  // #12: request_id 取得・記録
+  it("#12 request_id 取得・記録 → X-Request-ID ヘッダーの値がログ request_id に記録される", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        makeMockResponse({
+          status: 200,
+        }),
+      ),
+    );
+
+    const req = makeRequest("http://localhost:3000/api/v1/users", {
+      headers: { "X-Request-ID": "fe-test-id" },
+    });
+    await handleApiProxy(req, UPSTREAM_BASE);
+
+    const log = JSON.parse((writeSpy.mock.calls[0][0] as string).trim());
+    expect(log.request_id).toBe("fe-test-id");
+  });
+
+  // #14: request_id BE 転送
+  it("#14 request_id BE 転送 → X-Request-ID がそのまま BE への fetch headers に含まれる", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(makeMockResponse({ status: 200 }));
+    vi.stubGlobal("fetch", mockFetch);
+
+    const req = makeRequest("http://localhost:3000/api/v1/users", {
+      headers: { "X-Request-ID": "fe-test-id" },
+    });
+    await handleApiProxy(req, UPSTREAM_BASE);
+
+    const sentHeaders = (mockFetch.mock.calls[0] as Parameters<typeof fetch>)[1]
+      ?.headers as Headers;
+    expect(sentHeaders.get("x-request-id")).toBe("fe-test-id");
+  });
+
+  // #15: request_id ブラウザ透過
+  it("#15 request_id ブラウザ透過 → BE レスポンスの X-Request-ID がブラウザ向けレスポンスに残る", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        makeMockResponse({
+          status: 200,
+          headers: { "X-Request-ID": "be-echo" },
+        }),
+      ),
+    );
+
+    const req = makeRequest("http://localhost:3000/api/v1/users");
+    const res = await handleApiProxy(req, UPSTREAM_BASE);
+
+    expect(res.headers.get("x-request-id")).toBe("be-echo");
+  });
+
+  // #13: request_id 不在
+  it("#13 request_id 不在 → X-Request-ID ヘッダーがない場合 request_id が空文字でログ出力される", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        makeMockResponse({
+          status: 200,
+        }),
+      ),
+    );
+
+    const req = makeRequest("http://localhost:3000/api/v1/users");
+    await handleApiProxy(req, UPSTREAM_BASE);
+
+    const log = JSON.parse((writeSpy.mock.calls[0][0] as string).trim());
+    expect(log.request_id).toBe("");
+  });
+
+  // #16: request_id BE 接続失敗
+  it("#16 request_id BE 接続失敗 → BE 接続失敗時にも request_id がログに記録される", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Connection refused")));
+
+    const req = makeRequest("http://localhost:3000/api/v1/users", {
+      headers: { "X-Request-ID": "fe-fail" },
+    });
+    const res = await handleApiProxy(req, UPSTREAM_BASE);
+
+    expect(res.status).toBe(502);
+    const log = JSON.parse((writeSpy.mock.calls[0][0] as string).trim());
+    expect(log.request_id).toBe("fe-fail");
+    expect(log.status).toBe(0);
+    expect(log).toHaveProperty("error_message");
   });
 });

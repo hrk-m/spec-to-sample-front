@@ -1,4 +1,5 @@
-import type { UserSummary } from "@/pages/group-detail/model/group-detail";
+import type { GroupMember } from "@/entities/group";
+
 import { apiFetch } from "@/shared/api";
 
 export type AddGroupMembersParams = {
@@ -7,7 +8,7 @@ export type AddGroupMembersParams = {
 };
 
 export type AddGroupMembersResponse = {
-  members: UserSummary[];
+  members: GroupMember[];
 };
 
 export function addGroupMembers(params: AddGroupMembersParams): Promise<AddGroupMembersResponse> {

@@ -1,4 +1,5 @@
-import type { GroupDetail } from "@/pages/group-detail/model/group-detail";
+import type { GroupDetail } from "@/entities/group";
+
 import { apiFetch } from "@/shared/api";
 
 export function fetchGroup(groupId: number): Promise<GroupDetail> {

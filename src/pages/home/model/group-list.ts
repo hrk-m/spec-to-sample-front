@@ -1,60 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { type Group } from "@/entities/group";
 
 import { fetchGroups } from "@/pages/home/api/fetch-groups";
-import type { Group } from "@/pages/home/model/group";
 
 export const FETCH_LIMIT = 100;
 
-type GroupListCacheEntry = {
-  groups: Group[];
-  total: number;
-  fetchedOffset: number;
-  lastBatchSize: number;
-};
-
-const groupListCache = new Map<string, GroupListCacheEntry>();
-const GROUP_LIST_CACHE_KEY = "default";
-
-export function clearGroupListCache() {
-  groupListCache.clear();
-}
-
-export function prependGroupToGroupListCache(group: Group) {
-  const cacheEntry = groupListCache.get(GROUP_LIST_CACHE_KEY) ?? null;
-
-  if (!cacheEntry) {
-    groupListCache.set(GROUP_LIST_CACHE_KEY, {
-      groups: [group],
-      total: 1,
-      fetchedOffset: FETCH_LIMIT,
-      lastBatchSize: 1,
-    });
-    return;
-  }
-
-  const filteredGroups = cacheEntry.groups.filter((cachedGroup) => cachedGroup.id !== group.id);
-  groupListCache.set(GROUP_LIST_CACHE_KEY, {
-    ...cacheEntry,
-    groups: [group, ...filteredGroups],
-    total: cacheEntry.total + 1,
-  });
-}
-
 export function useGroupList() {
-  const cachedEntry = groupListCache.get(GROUP_LIST_CACHE_KEY) ?? null;
-  const [cachedGroups, setCachedGroups] = useState<Group[]>(() => cachedEntry?.groups ?? []);
+  const [cachedGroups, setCachedGroups] = useState<Group[]>([]);
   const cachedGroupsRef = useRef(cachedGroups);
-  const [total, setTotal] = useState(() => cachedEntry?.total ?? 0);
+  const [total, setTotal] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(() => !cachedEntry);
+  const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [fetchMoreError, setFetchMoreError] = useState<string | null>(null);
-  const [fetchedOffset, setFetchedOffset] = useState(() => cachedEntry?.fetchedOffset ?? 0);
-  const [lastBatchSize, setLastBatchSize] = useState(
-    () => cachedEntry?.lastBatchSize ?? FETCH_LIMIT,
-  );
+  const [fetchedOffset, setFetchedOffset] = useState(0);
+  const [lastBatchSize, setLastBatchSize] = useState(FETCH_LIMIT);
+  const [refetchKey, setRefetchKey] = useState(0);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -75,21 +38,7 @@ export function useGroupList() {
                   !cachedGroupsRef.current.some((cachedGroup) => cachedGroup.id === group.id),
               ),
             ]
-          : !query && cachedGroupsRef.current.length > 0
-            ? (() => {
-                const next = [...cachedGroupsRef.current];
-                const limit = Math.min(next.length, data.groups.length);
-
-                for (let index = 0; index < limit; index += 1) {
-                  const nextGroup = data.groups[index];
-                  if (nextGroup) {
-                    next[index] = nextGroup;
-                  }
-                }
-
-                return next;
-              })()
-            : data.groups;
+          : data.groups;
 
         setCachedGroups(nextGroups);
         setTotal(data.total);
@@ -139,29 +88,13 @@ export function useGroupList() {
   }, [searchQuery]);
 
   useEffect(() => {
-    if (!debouncedQuery) {
-      const cacheEntry = groupListCache.get(GROUP_LIST_CACHE_KEY) ?? null;
-
-      if (cacheEntry) {
-        setCachedGroups(cacheEntry.groups);
-        setTotal(cacheEntry.total);
-        setFetchedOffset(cacheEntry.fetchedOffset);
-        setLastBatchSize(cacheEntry.lastBatchSize);
-      } else {
-        setCachedGroups([]);
-        setTotal(0);
-        setFetchedOffset(0);
-        setLastBatchSize(FETCH_LIMIT);
-      }
-    } else {
-      setCachedGroups([]);
-      setTotal(0);
-      setFetchedOffset(0);
-      setLastBatchSize(FETCH_LIMIT);
-    }
+    setCachedGroups([]);
+    setTotal(0);
+    setFetchedOffset(0);
+    setLastBatchSize(FETCH_LIMIT);
     setFetchMoreError(null);
     doFetch(0, debouncedQuery, false);
-  }, [debouncedQuery, doFetch]);
+  }, [debouncedQuery, refetchKey, doFetch]);
 
   // IntersectionObserver for sentinel element
   const isFetchingMoreRef = useRef(isFetchingMore);
@@ -208,29 +141,21 @@ export function useGroupList() {
     return () => observer.disconnect();
   }, [doFetchMore]);
 
-  const visibleGroups = cachedGroups;
   const effectiveTotal = debouncedQuery ? cachedGroups.length : total;
 
   const hasCachedGroups = cachedGroups.length > 0;
   const shouldShowLoading = isLoading && !hasCachedGroups;
 
-  useEffect(() => {
-    if (!debouncedQuery) {
-      groupListCache.set(GROUP_LIST_CACHE_KEY, {
-        groups: cachedGroups,
-        total: effectiveTotal,
-        fetchedOffset,
-        lastBatchSize,
-      });
-    }
-  }, [cachedGroups, effectiveTotal, fetchedOffset, lastBatchSize, debouncedQuery]);
-
   const handleSearch = useCallback((query: string) => {
     setSearchQuery(query);
   }, []);
 
+  const refetch = useCallback(() => {
+    setRefetchKey((prev) => prev + 1);
+  }, []);
+
   return {
-    groups: visibleGroups,
+    groups: cachedGroups,
     total: effectiveTotal,
     searchQuery,
     error,
@@ -239,6 +164,7 @@ export function useGroupList() {
     fetchMoreError,
     sentinelRef,
     setSearchQuery: handleSearch,
+    refetch,
     groupCountLabel: shouldShowLoading
       ? "Loading groups..."
       : effectiveTotal > 0

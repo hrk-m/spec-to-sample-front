@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { validateGroupName } from "@/entities/group";
 import { Button, Dialog, Flex, Text, TextArea, TextField } from "@radix-ui/themes";
 
 import { useUpdateGroup } from "@/pages/group-detail/model/useUpdateGroup";
@@ -30,21 +31,11 @@ export function EditGroupDialog({
   });
 
   async function handleSave() {
-    setNameError(null);
+    const validationError = validateGroupName(name);
+    setNameError(validationError);
+    if (validationError) return;
 
-    const trimmedName = name.trim();
-
-    if (trimmedName.length === 0) {
-      setNameError("Name is required");
-      return;
-    }
-
-    if (trimmedName.length > 100) {
-      setNameError("Name must be 100 characters or less");
-      return;
-    }
-
-    await submit({ name: trimmedName, description });
+    await submit({ name: name.trim(), description });
   }
 
   return (

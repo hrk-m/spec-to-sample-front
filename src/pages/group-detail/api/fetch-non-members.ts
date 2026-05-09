@@ -1,8 +1,9 @@
-import type { UserSummary } from "@/pages/group-detail/model/group-detail";
+import type { GroupMember } from "@/entities/group";
+
 import { apiFetch } from "@/shared/api";
 
 export type NonMembersResponse = {
-  users: UserSummary[];
+  users: GroupMember[];
   total: number;
 };
 

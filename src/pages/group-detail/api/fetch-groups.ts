@@ -1,25 +1,29 @@
+// TODO: 将来 subgroup 専用 API に置き換える予定
+import type { GroupsResponse } from "@/entities/group";
+
 import { apiFetch } from "@/shared/api";
 
-export type GroupSummary = {
-  id: number;
-  name: string;
-  description: string;
-  member_count: number;
+export type FetchGroupsParams = {
+  q?: string;
+  limit?: number;
+  offset?: number;
 };
 
-export type FetchGroupsForSheetResponse = {
-  groups: GroupSummary[];
-  total: number;
-};
+export function fetchGroups(params: FetchGroupsParams): Promise<GroupsResponse> {
+  const query = new URLSearchParams();
 
-/**
- * Sheet 用の全グループ一覧取得。
- * pages/home/api/fetch-groups.ts の同一レイヤークロスインポートを避けるため、
- * pages/group-detail スライス内に独立して実装する。
- *
- * @param q 検索キーワード。空文字または undefined のとき q パラメータを付与しない。
- */
-export function fetchGroupsForSheet(q?: string): Promise<FetchGroupsForSheetResponse> {
-  const url = q ? `/api/v1/groups?q=${encodeURIComponent(q)}` : "/api/v1/groups";
-  return apiFetch<FetchGroupsForSheetResponse>(url);
+  if (params.q) {
+    query.set("q", params.q);
+  }
+  if (params.limit !== undefined) {
+    query.set("limit", String(params.limit));
+  }
+  if (params.offset !== undefined) {
+    query.set("offset", String(params.offset));
+  }
+
+  const queryString = query.toString();
+  const url = queryString ? `/api/v1/groups?${queryString}` : "/api/v1/groups";
+
+  return apiFetch<GroupsResponse>(url);
 }

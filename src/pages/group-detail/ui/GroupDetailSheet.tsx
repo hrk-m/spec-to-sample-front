@@ -1,9 +1,10 @@
-import type { UserSummary } from "@/pages/group-detail/model/group-detail";
+import type { GroupMember } from "@/entities/group";
+
 import { GroupDetailView } from "./GroupDetailView";
 
 type GroupDetailSheetProps = {
   groupId: number;
-  onMemberClick?: (member: UserSummary) => void;
+  onMemberClick?: (member: GroupMember) => void;
 };
 
 export function GroupDetailSheet({ groupId, onMemberClick }: GroupDetailSheetProps) {

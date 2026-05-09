@@ -6,6 +6,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GroupNavigationLayout } from "@/app/routes/GroupNavigationLayout";
 
 const closeAll = vi.fn();
+const homePageMock = vi.fn((_props: { refetchTrigger?: number }) => (
+  <div data-testid="home-page">HomePage</div>
+));
 
 vi.mock("@/pages/group-detail", () => ({
   GroupDetailPage: () => <div data-testid="group-detail-page">GroupDetailPage</div>,
@@ -14,7 +17,7 @@ vi.mock("@/pages/group-detail", () => ({
 }));
 
 vi.mock("@/pages/home", () => ({
-  HomePage: () => <div data-testid="home-page">HomePage</div>,
+  HomePage: (props: { refetchTrigger?: number }) => homePageMock(props),
 }));
 
 vi.mock("@/pages/users", () => ({
@@ -66,6 +69,10 @@ describe("GroupNavigationLayout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     closeAll.mockClear();
+    homePageMock.mockClear();
+    homePageMock.mockImplementation((_props: { refetchTrigger?: number }) => (
+      <div data-testid="home-page">HomePage</div>
+    ));
   });
 
   it("ホーム画面では HomePage に inert 属性がない", () => {
@@ -124,5 +131,20 @@ describe("GroupNavigationLayout", () => {
     // navigate は MemoryRouter 内の実 navigate が呼ばれる
     // /groups/1 へ replace: true で遷移すると state が消え sheet が非表示になる
     expect(screen.queryByLabelText("Open full page")).not.toBeInTheDocument();
+  });
+
+  it("Sheet クローズ後（sheet→home）に HomePage へ refetchTrigger が渡される", async () => {
+    const user = userEvent.setup();
+
+    renderWithRouter("/groups/1", { presentation: "sheet" });
+
+    // Sheet 表示中の refetchTrigger を記録
+    const refetchTriggerBeforeClose = homePageMock.mock.calls.at(-1)?.[0]?.refetchTrigger ?? 0;
+
+    await user.click(screen.getByRole("button", { name: "Go Home" }));
+
+    // home に戻った後の refetchTrigger は増加しているはず
+    const refetchTriggerAfterClose = homePageMock.mock.calls.at(-1)?.[0]?.refetchTrigger ?? 0;
+    expect(refetchTriggerAfterClose).toBeGreaterThan(refetchTriggerBeforeClose);
   });
 });

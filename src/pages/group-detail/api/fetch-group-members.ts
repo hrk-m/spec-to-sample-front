@@ -1,4 +1,4 @@
-import type { MembersResponse } from "@/pages/group-detail/model/group-detail";
+import type { MembersResponse } from "@/pages/group-detail/model/members-response";
 import { apiFetch } from "@/shared/api";
 
 export type FetchGroupMembersParams = {
@@ -6,6 +6,7 @@ export type FetchGroupMembersParams = {
   limit: number;
   offset: number;
   q?: string;
+  exclude_group_ids?: string;
 };
 
 export function fetchGroupMembers(params: FetchGroupMembersParams): Promise<MembersResponse> {
@@ -16,6 +17,10 @@ export function fetchGroupMembers(params: FetchGroupMembersParams): Promise<Memb
 
   if (params.q) {
     query.set("q", params.q);
+  }
+
+  if (params.exclude_group_ids) {
+    query.set("exclude_group_ids", params.exclude_group_ids);
   }
 
   return apiFetch<MembersResponse>(

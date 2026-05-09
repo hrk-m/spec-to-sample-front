@@ -3,9 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { UserDetailPage } from "@/pages/user-detail/ui/UserDetailPage";
+import { UserDetailPage } from "@/pages/users/ui/UserDetailPage";
 
-vi.mock("@/pages/user-detail/model/user-detail-state", () => ({
+vi.mock("@/pages/users/model/useUserDetail", () => ({
   useUserDetail: vi.fn(),
 }));
 
@@ -26,7 +26,7 @@ describe("UserDetailPage", () => {
   });
 
   it("ローディング中にスケルトン要素が DOM に存在する", async () => {
-    const { useUserDetail } = await import("@/pages/user-detail/model/user-detail-state");
+    const { useUserDetail } = await import("@/pages/users/model/useUserDetail");
     vi.mocked(useUserDetail).mockReturnValue({
       user: null,
       loading: true,
@@ -40,7 +40,7 @@ describe("UserDetailPage", () => {
   });
 
   it("成功時に id・uuid・姓名が DOM に表示される", async () => {
-    const { useUserDetail } = await import("@/pages/user-detail/model/user-detail-state");
+    const { useUserDetail } = await import("@/pages/users/model/useUserDetail");
     vi.mocked(useUserDetail).mockReturnValue({
       user: {
         id: 1,
@@ -61,7 +61,7 @@ describe("UserDetailPage", () => {
   });
 
   it("404 時に「ユーザーが見つかりません」が表示される", async () => {
-    const { useUserDetail } = await import("@/pages/user-detail/model/user-detail-state");
+    const { useUserDetail } = await import("@/pages/users/model/useUserDetail");
     vi.mocked(useUserDetail).mockReturnValue({
       user: null,
       loading: false,
@@ -75,7 +75,7 @@ describe("UserDetailPage", () => {
   });
 
   it("エラー時にエラーカード要素が DOM に表示される", async () => {
-    const { useUserDetail } = await import("@/pages/user-detail/model/user-detail-state");
+    const { useUserDetail } = await import("@/pages/users/model/useUserDetail");
     vi.mocked(useUserDetail).mockReturnValue({
       user: null,
       loading: false,
@@ -90,7 +90,7 @@ describe("UserDetailPage", () => {
 
   it("戻るボタンクリックで /users に遷移する", async () => {
     const user = userEvent.setup();
-    const { useUserDetail } = await import("@/pages/user-detail/model/user-detail-state");
+    const { useUserDetail } = await import("@/pages/users/model/useUserDetail");
     vi.mocked(useUserDetail).mockReturnValue({
       user: {
         id: 1,

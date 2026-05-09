@@ -1,4 +1,4 @@
-import { appColors } from "@/shared/ui/theme";
+import { appColors } from "@/shared/config";
 
 const DEFAULT_SHEET_WIDTH = "90vw";
 const FULL_WIDTH = "100vw";
@@ -34,7 +34,7 @@ export const styles = {
     right: 0,
     width: DEFAULT_SHEET_WIDTH,
     height: SHEET_HEIGHT,
-    background: appColors.background,
+    background: "#ffffff",
     boxShadow: "-4px 0 24px rgba(0,0,0,0.15)",
     transition: `transform ${ANIMATION_DURATION} ${ANIMATION_EASING}, width ${ANIMATION_DURATION} ${ANIMATION_EASING}`,
     display: "flex",

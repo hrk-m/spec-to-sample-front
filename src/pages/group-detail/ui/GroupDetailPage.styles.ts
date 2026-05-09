@@ -1,4 +1,4 @@
-import { appColors } from "@/shared/ui";
+import { appColors } from "@/shared/config";
 
 const colors = {
   separator: appColors.separator,
@@ -88,5 +88,68 @@ export const styles = {
     background: "rgba(118, 118, 128, 0.16)",
     borderRadius: 999,
     height: 12,
+  },
+  memberScrollContainer: {
+    flex: 1,
+    overflowY: "auto" as const,
+    padding: "0 4px",
+    minHeight: 0,
+    marginBottom: 12,
+  },
+  groupHeaderCard: {
+    marginTop: 12,
+    flexShrink: 0,
+    border: `1px solid ${colors.separator}`,
+    borderRadius: 22,
+    padding: "16px 20px",
+    display: "flex",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  groupHeaderName: {
+    margin: 0,
+    fontSize: 26,
+    fontWeight: 700,
+    letterSpacing: -0.5,
+    color: colors.textPrimary,
+    lineHeight: 1.2,
+  },
+  groupHeaderDescription: {
+    margin: "6px 0 0 0",
+    fontSize: 14,
+    fontWeight: 400,
+    color: colors.textSecondary,
+    lineHeight: 1.5,
+  },
+  chipRow: {
+    marginTop: 12,
+    flexShrink: 0,
+  },
+  memberSection: {
+    display: "flex",
+    flex: 1,
+    flexDirection: "column" as const,
+    marginTop: 16,
+    border: `1px solid ${colors.separator}`,
+    borderRadius: 22,
+    overflow: "hidden",
+    minHeight: 0,
+  },
+  memberSectionHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "16px 20px 12px",
+    borderBottom: `1px solid ${colors.separator}`,
+    flexShrink: 0,
+  },
+  memberSectionTitle: {
+    margin: 0,
+    fontSize: 13,
+    fontWeight: 600,
+    color: colors.textTertiary,
+    letterSpacing: 0.4,
+    textTransform: "uppercase" as const,
   },
 } as const;

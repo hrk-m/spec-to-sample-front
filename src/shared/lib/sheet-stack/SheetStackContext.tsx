@@ -3,6 +3,7 @@ import { createContext, useContext, type ReactNode } from "react";
 export type SheetEntry = {
   id: string;
   content: ReactNode;
+  onClose?: () => void;
   closing?: boolean;
 };
 

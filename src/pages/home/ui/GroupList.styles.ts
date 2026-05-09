@@ -1,4 +1,4 @@
-import { appColors } from "@/shared/ui";
+import { appColors } from "@/shared/config";
 
 const colors = {
   separator: appColors.separator,

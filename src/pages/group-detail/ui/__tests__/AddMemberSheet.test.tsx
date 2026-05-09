@@ -4,35 +4,28 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { addGroupMembers } from "@/pages/group-detail/api/add-group-members";
-import {
-  clearNonMemberListCache,
-  useNonMemberList,
-} from "@/pages/group-detail/model/useNonMemberList";
+import { useNonMemberList } from "@/pages/group-detail/model/useNonMemberList";
 import { AddMemberSheet } from "@/pages/group-detail/ui/AddMemberSheet";
 
 vi.mock("@/pages/group-detail/model/useNonMemberList", () => ({
   useNonMemberList: vi.fn(),
-  clearNonMemberListCache: vi.fn(),
 }));
 
 vi.mock("@/pages/group-detail/api/add-group-members", () => ({
   addGroupMembers: vi.fn(),
 }));
 
-vi.mock("@/pages/group-detail/model/member-list", () => ({
-  clearMemberListCache: vi.fn(),
-}));
+const mockCloseSheet = vi.fn();
 
-vi.mock("@/pages/group-detail/model/group-detail-state", () => ({
-  useGroupDetail: vi.fn(() => ({
-    group: null,
-    error: null,
-    isLoading: false,
-    refetch: vi.fn(),
+vi.mock("@/shared/lib/sheet-stack", () => ({
+  useSheetStack: vi.fn(() => ({
+    openSheet: vi.fn(),
+    closeSheet: mockCloseSheet,
+    sheets: [],
+    removeSheet: vi.fn(),
+    closeAll: vi.fn(),
   })),
 }));
-
-const mockOnClose = vi.fn();
 
 const defaultHookReturn = {
   users: [],
@@ -44,18 +37,19 @@ const defaultHookReturn = {
   sentinelRef: { current: null },
   isFetchingMore: false,
   fetchMoreError: null,
-  lastBatchSize: 100,
+  refetch: vi.fn(),
 };
 
 describe("AddMemberSheet", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCloseSheet.mockClear();
     MockIntersectionObserver.reset();
     vi.mocked(useNonMemberList).mockReturnValue(defaultHookReturn);
   });
 
   it("検索入力と一括追加ボタンが表示される", () => {
-    render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+    render(<AddMemberSheet groupId={1} />);
 
     expect(screen.getByPlaceholderText(/Search/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "一括追加" })).toBeInTheDocument();
@@ -83,7 +77,7 @@ describe("AddMemberSheet", () => {
       total: 2,
     });
 
-    render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+    render(<AddMemberSheet groupId={1} />);
 
     expect(screen.getByText("山田 太郎")).toBeInTheDocument();
     expect(screen.getByText("鈴木 花子")).toBeInTheDocument();
@@ -116,7 +110,7 @@ describe("AddMemberSheet", () => {
       ],
     });
 
-    render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+    render(<AddMemberSheet groupId={1} />);
 
     const userName = screen.getByText("山田 太郎");
     await user.click(userName);
@@ -128,7 +122,7 @@ describe("AddMemberSheet", () => {
     });
   });
 
-  it("追加成功後に onClose が呼ばれる", async () => {
+  it("追加成功後に closeSheet が呼ばれる", async () => {
     const user = userEvent.setup();
     vi.mocked(useNonMemberList).mockReturnValue({
       ...defaultHookReturn,
@@ -155,7 +149,7 @@ describe("AddMemberSheet", () => {
       ],
     });
 
-    render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+    render(<AddMemberSheet groupId={1} />);
 
     const userName = screen.getByText("山田 太郎");
     await user.click(userName);
@@ -163,7 +157,7 @@ describe("AddMemberSheet", () => {
     await user.click(screen.getByRole("button", { name: "一括追加" }));
 
     await waitFor(() => {
-      expect(mockOnClose).toHaveBeenCalledOnce();
+      expect(mockCloseSheet).toHaveBeenCalledOnce();
     });
   });
 
@@ -184,7 +178,7 @@ describe("AddMemberSheet", () => {
     });
     vi.mocked(addGroupMembers).mockRejectedValueOnce(new Error("409 Conflict"));
 
-    render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+    render(<AddMemberSheet groupId={1} />);
 
     const userName = screen.getByText("山田 太郎");
     await user.click(userName);
@@ -195,7 +189,7 @@ describe("AddMemberSheet", () => {
       expect(screen.getByText("選択したユーザーはすでにメンバーです")).toBeInTheDocument();
     });
 
-    expect(mockOnClose).not.toHaveBeenCalled();
+    expect(mockCloseSheet).not.toHaveBeenCalled();
   });
 
   it("その他のエラー時に汎用エラーメッセージを表示する", async () => {
@@ -215,7 +209,7 @@ describe("AddMemberSheet", () => {
     });
     vi.mocked(addGroupMembers).mockRejectedValueOnce(new Error("500 Internal Server Error"));
 
-    render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+    render(<AddMemberSheet groupId={1} />);
 
     const userName = screen.getByText("山田 太郎");
     await user.click(userName);
@@ -236,7 +230,7 @@ describe("AddMemberSheet", () => {
       users: [],
     });
 
-    render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+    render(<AddMemberSheet groupId={1} />);
 
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
   });
@@ -257,7 +251,7 @@ describe("AddMemberSheet", () => {
       total: 1,
     });
 
-    render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+    render(<AddMemberSheet groupId={1} />);
 
     expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
     expect(screen.getByText("山田 太郎")).toBeInTheDocument();
@@ -265,7 +259,7 @@ describe("AddMemberSheet", () => {
 
   describe("ページネーション UI が存在しない", () => {
     it("perPage セレクターボタン（20/50/100）が存在しない", () => {
-      render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+      render(<AddMemberSheet groupId={1} />);
 
       expect(screen.queryByRole("button", { name: "20" })).not.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "50" })).not.toBeInTheDocument();
@@ -287,7 +281,7 @@ describe("AddMemberSheet", () => {
         total: 1,
       });
 
-      render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+      render(<AddMemberSheet groupId={1} />);
 
       expect(screen.queryByRole("button", { name: /Previous/i })).not.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /Next/i })).not.toBeInTheDocument();
@@ -308,14 +302,14 @@ describe("AddMemberSheet", () => {
         total: 1,
       });
 
-      render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+      render(<AddMemberSheet groupId={1} />);
 
       expect(screen.queryByText(/Page \d+ of \d+/)).not.toBeInTheDocument();
     });
   });
 
   it("sentinel 要素が DOM に存在する", () => {
-    render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+    render(<AddMemberSheet groupId={1} />);
 
     expect(screen.getByTestId("non-member-sentinel")).toBeInTheDocument();
   });
@@ -343,18 +337,12 @@ describe("AddMemberSheet", () => {
       fetchMoreError: "Failed to fetch",
     });
 
-    render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+    render(<AddMemberSheet groupId={1} />);
 
     expect(screen.getByText("Failed to fetch")).toBeInTheDocument();
     // Existing items are still displayed
     expect(screen.getByText("山田 太郎")).toBeInTheDocument();
     expect(screen.getByText("鈴木 花子")).toBeInTheDocument();
-  });
-
-  it("AddMemberSheet がマウントされたとき、clearNonMemberListCache(groupId) が呼ばれる", () => {
-    render(<AddMemberSheet groupId={42} onClose={mockOnClose} />);
-
-    expect(clearNonMemberListCache).toHaveBeenCalledWith(42);
   });
 
   it("「一括追加」ボタンが検索フォームの下・ユーザー一覧の上に表示される", () => {
@@ -372,7 +360,7 @@ describe("AddMemberSheet", () => {
       total: 1,
     });
 
-    render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+    render(<AddMemberSheet groupId={1} />);
 
     const bulkButton = screen.getByRole("button", { name: "一括追加" });
     const searchInput = screen.getByPlaceholderText(/Search/i);
@@ -402,7 +390,7 @@ describe("AddMemberSheet", () => {
       total: 1,
     });
 
-    render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+    render(<AddMemberSheet groupId={1} />);
 
     expect(screen.getByRole("button", { name: "一括追加" })).toBeDisabled();
   });
@@ -423,7 +411,7 @@ describe("AddMemberSheet", () => {
       total: 1,
     });
 
-    render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+    render(<AddMemberSheet groupId={1} />);
 
     await user.click(screen.getByText("山田 太郎"));
 
@@ -446,7 +434,7 @@ describe("AddMemberSheet", () => {
       total: 1,
     });
 
-    render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+    render(<AddMemberSheet groupId={1} />);
 
     await user.click(screen.getByText("山田 太郎"));
     expect(screen.getByRole("button", { name: "一括追加" })).not.toBeDisabled();
@@ -470,7 +458,7 @@ describe("AddMemberSheet", () => {
       total: 1,
     });
 
-    render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+    render(<AddMemberSheet groupId={1} />);
 
     const buttons = screen.getAllByRole("button", { name: "一括追加" });
     expect(buttons).toHaveLength(1);
@@ -491,7 +479,7 @@ describe("AddMemberSheet", () => {
       total: 1,
     });
 
-    render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+    render(<AddMemberSheet groupId={1} />);
 
     expect(screen.getByRole("columnheader", { name: "姓名" })).toBeInTheDocument();
   });
@@ -511,7 +499,7 @@ describe("AddMemberSheet", () => {
       total: 1,
     });
 
-    render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+    render(<AddMemberSheet groupId={1} />);
 
     expect(screen.getByRole("columnheader", { name: "uuid" })).toBeInTheDocument();
   });
@@ -531,7 +519,7 @@ describe("AddMemberSheet", () => {
       total: 1,
     });
 
-    const { container } = render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+    const { container } = render(<AddMemberSheet groupId={1} />);
 
     // UserAvatar renders initials in a Flex element with specific avatar styles
     // After conversion to table format, no avatar element should exist
@@ -554,7 +542,7 @@ describe("AddMemberSheet", () => {
       total: 1,
     });
 
-    const { container } = render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+    const { container } = render(<AddMemberSheet groupId={1} />);
 
     const selectionHeader = container.querySelector('th[aria-label="選択"]');
     expect(selectionHeader).toBeInTheDocument();
@@ -583,7 +571,7 @@ describe("AddMemberSheet", () => {
         total: 2,
       });
 
-      const { container } = render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+      const { container } = render(<AddMemberSheet groupId={1} />);
 
       const headerCheckbox = container.querySelector(
         'input[type="checkbox"][data-testid="header-checkbox"]',
@@ -616,7 +604,7 @@ describe("AddMemberSheet", () => {
         total: 2,
       });
 
-      const { container } = render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+      const { container } = render(<AddMemberSheet groupId={1} />);
 
       await user.click(screen.getByText("山田 太郎"));
       await user.click(screen.getByText("鈴木 花子"));
@@ -651,7 +639,7 @@ describe("AddMemberSheet", () => {
         total: 2,
       });
 
-      const { container } = render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+      const { container } = render(<AddMemberSheet groupId={1} />);
 
       await user.click(screen.getByText("山田 太郎"));
 
@@ -684,7 +672,7 @@ describe("AddMemberSheet", () => {
         total: 2,
       });
 
-      const { container } = render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+      const { container } = render(<AddMemberSheet groupId={1} />);
 
       const headerCheckbox = container.querySelector(
         'input[type="checkbox"][data-testid="header-checkbox"]',
@@ -723,7 +711,7 @@ describe("AddMemberSheet", () => {
         total: 2,
       });
 
-      const { container } = render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+      const { container } = render(<AddMemberSheet groupId={1} />);
 
       const headerCheckbox = container.querySelector(
         'input[type="checkbox"][data-testid="header-checkbox"]',
@@ -766,7 +754,7 @@ describe("AddMemberSheet", () => {
         total: 2,
       });
 
-      const { container } = render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+      const { container } = render(<AddMemberSheet groupId={1} />);
 
       // Click one item to get indeterminate state
       await user.click(screen.getByText("山田 太郎"));
@@ -793,7 +781,7 @@ describe("AddMemberSheet", () => {
         isLoading: false,
       });
 
-      render(<AddMemberSheet groupId={1} onClose={mockOnClose} />);
+      render(<AddMemberSheet groupId={1} />);
 
       const headerCheckbox = screen.getByTestId("header-checkbox") as HTMLInputElement;
       expect(headerCheckbox).toBeDisabled();

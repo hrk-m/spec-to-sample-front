@@ -1,24 +1,9 @@
 import { useCallback, useState } from "react";
+import { validateGroupName } from "@/entities/group";
 import { useNavigate } from "react-router";
 
 import { createGroup } from "@/pages/home/api/create-group";
-import type { CreateGroupRequest } from "@/pages/home/model/group";
-import { prependGroupToGroupListCache } from "@/pages/home/model/group-list";
-
-const NAME_MAX_LENGTH = 100;
-
-type ValidationError = string | null;
-
-function validateName(name: string): ValidationError {
-  const trimmed = name.trim();
-  if (trimmed.length === 0) {
-    return "Name is required";
-  }
-  if (trimmed.length > NAME_MAX_LENGTH) {
-    return "Name must be 100 characters or less";
-  }
-  return null;
-}
+import type { CreateGroupRequest } from "./group";
 
 export function useCreateGroup() {
   const navigate = useNavigate();
@@ -28,7 +13,7 @@ export function useCreateGroup() {
 
   const submit = useCallback(
     async (params: CreateGroupRequest) => {
-      const validationError = validateName(params.name);
+      const validationError = validateGroupName(params.name);
       if (validationError) {
         setNameError(validationError);
         return;
@@ -40,7 +25,6 @@ export function useCreateGroup() {
 
       try {
         const group = await createGroup(params);
-        prependGroupToGroupListCache(group);
         navigate(`/groups/${String(group.id)}`);
       } catch (err: unknown) {
         setError(String(err));

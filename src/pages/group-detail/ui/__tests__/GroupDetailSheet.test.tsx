@@ -1,3 +1,5 @@
+import type { GroupDetail } from "@/entities/group";
+import { Theme } from "@radix-ui/themes";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
@@ -5,9 +7,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fetchGroup } from "@/pages/group-detail/api/fetch-group";
 import { fetchGroupMembers } from "@/pages/group-detail/api/fetch-group-members";
-import type { GroupDetail, MembersResponse } from "@/pages/group-detail/model/group-detail";
-import { clearGroupDetailCache } from "@/pages/group-detail/model/group-detail-state";
-import { clearMemberListCache } from "@/pages/group-detail/model/member-list";
+import type { MembersResponse } from "@/pages/group-detail/model/members-response";
 import { GroupDetailSheet } from "@/pages/group-detail/ui/GroupDetailSheet";
 
 vi.mock("@/pages/group-detail/api/fetch-group", () => ({
@@ -52,48 +52,51 @@ const mockMembersResponse: MembersResponse = {
     },
   ],
   total: 2,
+  duplicate_count: 0,
 };
+
+function renderSheet(onMemberClick?: (m: (typeof mockMembersResponse.members)[0]) => void) {
+  return render(
+    <Theme>
+      <MemoryRouter>
+        <GroupDetailSheet groupId={1} onMemberClick={onMemberClick} />
+      </MemoryRouter>
+    </Theme>,
+  );
+}
 
 describe("GroupDetailSheet", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    clearGroupDetailCache();
-    clearMemberListCache();
   });
 
   it("グループ名と説明を表示する", async () => {
     vi.mocked(fetchGroup).mockResolvedValueOnce(mockGroup);
     vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
 
-    render(
-      <MemoryRouter>
-        <GroupDetailSheet groupId={1} />
-      </MemoryRouter>,
-    );
+    renderSheet();
 
     await waitFor(() => {
       expect(screen.getByText("dev-team")).toBeInTheDocument();
     });
     expect(screen.getByText("Development team")).toBeInTheDocument();
-    expect(screen.getByText("Members")).toBeInTheDocument();
-    expect(screen.getByText("2 total")).toBeInTheDocument();
+    expect(screen.getByText("すべてのメンバー")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("2件")).toBeInTheDocument();
+    });
   });
 
-  it("ページ詳細と同じ Name / Description カードを表示する", async () => {
+  it("グループ名と説明がヘッダーに表示される", async () => {
     vi.mocked(fetchGroup).mockResolvedValueOnce(mockGroup);
     vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
 
-    render(
-      <MemoryRouter>
-        <GroupDetailSheet groupId={1} />
-      </MemoryRouter>,
-    );
+    renderSheet();
 
     await waitFor(() => {
-      expect(screen.getByText("Name")).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "dev-team" })).toBeInTheDocument();
     });
 
-    expect(screen.getByText("Description")).toBeInTheDocument();
+    expect(screen.getByText("Development team")).toBeInTheDocument();
   });
 
   it("メンバークリックを親へ伝播する", async () => {
@@ -103,11 +106,7 @@ describe("GroupDetailSheet", () => {
     vi.mocked(fetchGroup).mockResolvedValueOnce(mockGroup);
     vi.mocked(fetchGroupMembers).mockResolvedValueOnce(mockMembersResponse);
 
-    render(
-      <MemoryRouter>
-        <GroupDetailSheet groupId={1} onMemberClick={onMemberClick} />
-      </MemoryRouter>,
-    );
+    renderSheet(onMemberClick);
 
     await waitFor(() => {
       expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
@@ -125,7 +124,7 @@ describe("GroupDetailSheet", () => {
     });
   });
 
-  it("再表示時はキャッシュを使ってスケルトンを出さない", async () => {
+  it("再マウント時はグループローディングが発生する（キャッシュなし）", async () => {
     vi.mocked(fetchGroup)
       .mockResolvedValueOnce(mockGroup)
       .mockReturnValueOnce(new Promise(() => {}));
@@ -133,11 +132,7 @@ describe("GroupDetailSheet", () => {
       .mockResolvedValueOnce(mockMembersResponse)
       .mockReturnValueOnce(new Promise(() => {}));
 
-    const { unmount } = render(
-      <MemoryRouter>
-        <GroupDetailSheet groupId={1} />
-      </MemoryRouter>,
-    );
+    const { unmount } = renderSheet();
 
     await waitFor(() => {
       expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
@@ -145,15 +140,9 @@ describe("GroupDetailSheet", () => {
 
     unmount();
 
-    render(
-      <MemoryRouter>
-        <GroupDetailSheet groupId={1} />
-      </MemoryRouter>,
-    );
+    renderSheet();
 
-    expect(screen.getByText("dev-team")).toBeInTheDocument();
-    expect(screen.getByText("Yamada Taro")).toBeInTheDocument();
-    expect(screen.queryByText("loading group...")).not.toBeInTheDocument();
-    expect(screen.queryByText("loading members...")).not.toBeInTheDocument();
+    // キャッシュが無いため再マウント時はグループローディングが発生する
+    expect(screen.getByText("loading group...")).toBeInTheDocument();
   });
 });

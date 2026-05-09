@@ -1,40 +1,37 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { GroupDetail, SubgroupSummary } from "@/entities/group";
 
 import { fetchGroup } from "@/pages/group-detail/api/fetch-group";
-import type { GroupDetail, SubgroupSummary } from "@/pages/group-detail/model/group-detail";
 
-const groupDetailCache = new Map<number, GroupDetail>();
+export function useGroupDetail(groupId: number, options?: { enabled?: boolean }) {
+  const enabled = options?.enabled ?? true;
 
-export function clearGroupDetailCache() {
-  groupDetailCache.clear();
-}
-
-export function useGroupDetail(groupId: number) {
-  const [group, setGroup] = useState<GroupDetail | null>(
-    () => groupDetailCache.get(groupId) ?? null,
-  );
+  const [group, setGroup] = useState<GroupDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(() => !groupDetailCache.has(groupId));
+  const [isLoading, setIsLoading] = useState(enabled);
   const [refetchKey, setRefetchKey] = useState(0);
 
+  const previousGroupIdRef = useRef(groupId);
+
   const refetch = useCallback(() => {
-    groupDetailCache.delete(groupId);
     setRefetchKey((prev) => prev + 1);
-  }, [groupId]);
+  }, []);
 
   useEffect(() => {
+    if (!enabled) return;
+
     let isActive = true;
 
-    const cachedGroup = groupDetailCache.get(groupId) ?? null;
-
-    setGroup(cachedGroup);
+    if (previousGroupIdRef.current !== groupId) {
+      setGroup(null);
+      previousGroupIdRef.current = groupId;
+    }
     setError(null);
     setIsLoading(true);
 
     fetchGroup(groupId)
       .then((data) => {
         if (!isActive) return;
-        groupDetailCache.set(groupId, data);
         setGroup(data);
       })
       .catch((err: unknown) => {
@@ -49,7 +46,7 @@ export function useGroupDetail(groupId: number) {
     return () => {
       isActive = false;
     };
-  }, [groupId, refetchKey]);
+  }, [groupId, refetchKey, enabled]);
 
   const subgroups: SubgroupSummary[] = group?.subgroups ?? [];
 

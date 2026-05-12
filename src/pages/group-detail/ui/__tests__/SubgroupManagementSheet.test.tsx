@@ -27,8 +27,8 @@ vi.mock("@/pages/group-detail/ui/AddSubgroupSheet", () => ({
   AddSubgroupSheet: mockAddSubgroupSheet,
 }));
 
-vi.mock("@/pages/group-detail/model/useGroupDetail", () => ({
-  useGroupDetail: vi.fn(),
+vi.mock("@/pages/group-detail/model/useSubgroups", () => ({
+  useSubgroups: vi.fn(),
 }));
 
 const mockDeleteSubgroup = deleteSubgroup as ReturnType<typeof vi.fn>;
@@ -50,11 +50,8 @@ describe("SubgroupManagementSheet", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
 
-    const { useGroupDetail } = await import("@/pages/group-detail/model/useGroupDetail");
-    vi.mocked(useGroupDetail).mockReturnValue({
-      group: null,
-      error: null,
-      isLoading: false,
+    const { useSubgroups } = await import("@/pages/group-detail/model/useSubgroups");
+    vi.mocked(useSubgroups).mockReturnValue({
       refetch: vi.fn(),
       subgroups: sampleSubgroups,
     });
@@ -88,11 +85,8 @@ describe("SubgroupManagementSheet", () => {
   });
 
   it("サブグループが空の場合に空状態メッセージが表示される", async () => {
-    const { useGroupDetail } = await import("@/pages/group-detail/model/useGroupDetail");
-    vi.mocked(useGroupDetail).mockReturnValue({
-      group: null,
-      error: null,
-      isLoading: false,
+    const { useSubgroups } = await import("@/pages/group-detail/model/useSubgroups");
+    vi.mocked(useSubgroups).mockReturnValue({
       refetch: vi.fn(),
       subgroups: [],
     });
@@ -120,12 +114,9 @@ describe("SubgroupManagementSheet", () => {
     const user = userEvent.setup();
     mockDeleteSubgroup.mockResolvedValueOnce(undefined);
 
-    const { useGroupDetail } = await import("@/pages/group-detail/model/useGroupDetail");
+    const { useSubgroups } = await import("@/pages/group-detail/model/useSubgroups");
     const mockRefetch = vi.fn();
-    vi.mocked(useGroupDetail).mockReturnValue({
-      group: null,
-      error: null,
-      isLoading: false,
+    vi.mocked(useSubgroups).mockReturnValue({
       refetch: mockRefetch,
       subgroups: sampleSubgroups,
     });
@@ -173,15 +164,38 @@ describe("SubgroupManagementSheet", () => {
     );
   });
 
+  it("AddSubgroupSheet に useSubgroups の subgroups を props で渡す", async () => {
+    const user = userEvent.setup();
+
+    const { useSheetStack } = await import("@/shared/lib/sheet-stack");
+    const mockOpenSheet = vi.fn();
+    vi.mocked(useSheetStack).mockReturnValue({
+      openSheet: mockOpenSheet,
+      closeSheet: vi.fn(),
+      sheets: [],
+      removeSheet: vi.fn(),
+      closeAll: vi.fn(),
+    });
+
+    renderSheet();
+
+    await user.click(screen.getByRole("button", { name: "＋ 追加" }));
+
+    expect(mockOpenSheet).toHaveBeenCalledOnce();
+
+    const openSheetArg = mockOpenSheet.mock.calls[0]?.[0] as {
+      id: string;
+      content: { props: { subgroups: SubgroupSummary[] } };
+    };
+    expect(openSheetArg.content.props.subgroups).toEqual(sampleSubgroups);
+  });
+
   it("「＋ 追加」ボタンクリックで AddSubgroupSheet の onClose コールバック経由で refetch が呼ばれる", async () => {
     const user = userEvent.setup();
 
-    const { useGroupDetail } = await import("@/pages/group-detail/model/useGroupDetail");
+    const { useSubgroups } = await import("@/pages/group-detail/model/useSubgroups");
     const mockRefetch = vi.fn();
-    vi.mocked(useGroupDetail).mockReturnValue({
-      group: null,
-      error: null,
-      isLoading: false,
+    vi.mocked(useSubgroups).mockReturnValue({
       refetch: mockRefetch,
       subgroups: sampleSubgroups,
     });

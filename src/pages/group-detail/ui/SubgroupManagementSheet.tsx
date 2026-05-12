@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { Box, Button, Flex, Text } from "@radix-ui/themes";
 
-import { useGroupDetail } from "@/pages/group-detail/model/useGroupDetail";
+import { useSubgroups } from "@/pages/group-detail/model/useSubgroups";
 import { appColors } from "@/shared/config";
 import { useSheetStack } from "@/shared/lib/sheet-stack";
 import { AddSubgroupSheet } from "./AddSubgroupSheet";
@@ -73,7 +73,7 @@ type SubgroupManagementSheetProps = {
 
 export function SubgroupManagementSheet({ groupId, groupName }: SubgroupManagementSheetProps) {
   const { openSheet } = useSheetStack();
-  const { subgroups, refetch } = useGroupDetail(groupId);
+  const { subgroups, refetch } = useSubgroups(groupId);
   const [deletingSubgroupId, setDeletingSubgroupId] = useState<number | null>(null);
 
   const handleAddClick = useCallback(() => {
